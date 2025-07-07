@@ -1,0 +1,63 @@
+configManagerUrl: "https://constance-mw.app.intel.com/"
+node_env: "development"
+chartName: "constance-helm-dev"
+
+reactApp:
+  name: react-app-dev
+  replicas: 2
+  image: "amr-registry.caas.intel.com/dtd-tools/constance-fe-dev"
+  tag: "3.1.12"
+  memoryLimit: "8000Mi"
+  cpuLimit: "2"
+  apiUrl: "https://constance-mw-dev.dtdweb.intel.com/api/v1"
+  viteStage: "dev"
+  containerPort: 80
+  targetPort: 80
+  certificateHost: "constance-dev.dtdweb.intel.com"
+  certificateName: "constance-dev.dtdweb.intel.com"
+  serviceIngressHost: "constance-dev.dtdweb.intel.com"
+  serviceIngressAnnotations:
+    proxyBufferSize: "1024m"
+    proxyBusyBufferSize: "1024m"
+    proxyMaxTempFileSize: "1024m"
+
+expressApp:
+  name: express-app-dev
+  replicas: 2
+  image: "amr-registry.caas.intel.com/dtd-tools/constance-mw-dev"
+  tag: "3.1.12"
+  memoryLimit: "12000Mi"
+  cpuLimit: "3"
+  pvcStorageSize: "10Gi"
+  pvcClaimName: middleware-pvc-dev
+  storageMountPath: /opt/storage
+  nodeOptions: "--max-old-space-size=16384"
+  containerPort: 7000
+  targetPort: 7000
+  certificateHost: "constance-mw-dev.dtdweb.intel.com"
+  certificateName: "constance-mw-dev.dtdweb.intel.com"
+  serviceIngressHost: "constance-mw-dev.dtdweb.intel.com"
+  serviceIngressAnnotations:
+    proxyBufferSize: "1024m"
+    proxyBusyBufferSize: "1024m"
+    proxyMaxTempFileSize: "1024m"
+
+database:
+  primary:
+    name: "spider_primary_dev"
+    connectionSecretName: "mongo-secret-primary-dev"
+  nets:
+    name: "spider_nets_dev"
+    connectionSecretName: "mongo-secret-nets-dev"
+  snapshot:
+    name: "spider_snapshot_dev"
+    connectionSecretName: "mongo-secret-snapshot-dev"
+
+# servicePort: 80
+# serviceTargetPort: 80
+# serviceIngressPort: 80
+
+
+# servicePort: 7000
+# serviceTargetPort: 7000
+# serviceIngressPort: 7000

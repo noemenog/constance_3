@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.reactApp.name }}
+spec:
+  replicas: {{ .Values.reactApp.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.reactApp.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.reactApp.name }}
+    spec:
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: registry-cred
+      containers:
+        - name: {{ .Values.reactApp.name }}
+          image: {{ .Values.reactApp.image }}:{{ .Values.reactApp.tag }}
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "5500Mi"
+              cpu: "2"
+            limits:
+              memory: {{ .Values.reactApp.memoryLimit }}
+              cpu: {{ .Values.reactApp.cpuLimit }}
+          ports:
+            - containerPort: {{ .Values.reactApp.containerPort }}
+          env:
+            - name: HTTP_PROXY
+              value: 'http://proxy-dmz.intel.com:912'
+            - name: HTTPS_PROXY
+              value: 'http://proxy-dmz.intel.com:912'
+            - name: NODE_ENV
+              value: {{ .Values.node_env }}
+            - name: VITE_API_URL
+              value: {{ .Values.reactApp.apiUrl }}
+            - name: VITE_STAGE
+              value: {{ .Values.reactApp.viteStage }}
+            - name: CONFIG_MGR_HOST 
+              value: {{ .Values.configManagerUrl }}
+
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.expressApp.name }}
+spec:
+  replicas: {{ .Values.expressApp.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.expressApp.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.expressApp.name }}
+    spec:
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: registry-cred
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.expressApp.pvcClaimName }}
+      containers:
+        - name: {{ .Values.expressApp.name }}
+          image: {{ .Values.expressApp.image }}:{{ .Values.expressApp.tag }}
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: storage
+              mountPath: {{ .Values.expressApp.storageMountPath }}
+          resources:
+            requests:
+              memory: "12000Mi"
+              cpu: "3"
+            limits:
+              memory: {{ .Values.expressApp.memoryLimit }}
+              cpu: {{ .Values.expressApp.cpuLimit }}
+          ports:
+            - containerPort: {{ .Values.expressApp.containerPort }}
+          env:
+            - name: STORE_ROOT_PATH
+              value: {{ .Values.expressApp.storageMountPath }}
+            - name: HTTP_PROXY
+              value: 'http://proxy-dmz.intel.com:912'
+            - name: HTTPS_PROXY
+              value: 'http://proxy-dmz.intel.com:912'
+
+            - name: NODE_ENV
+              value: {{ .Values.node_env }}
+
+            - name: CONFIG_MGR_HOST 
+              value: {{ .Values.configManagerUrl }}
+
+            # Setting Node memory usage capacity:  https://stackoverflow.com/a/64409997
+            - name: NODE_OPTIONS 
+              value: {{ .Values.expressApp.nodeOptions }}
+            
+            - name: PRIMARY_DB_NAME 
+              value: {{ .Values.database.primary.name }}
+            - name: PRIMARY_DB_CONN_STRING 
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.primary.connectionSecretName }}
+                  key: connection
+            
+            - name: NETS_DB_NAME 
+              value: {{ .Values.database.nets.name }}
+            - name: NETS_DB_CONN_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.nets.connectionSecretName }}
+                  key: connection
+
+            - name: SNAPSHOT_DB_NAME 
+              value: {{ .Values.database.snapshot.name }}
+            - name: SNAPSHOT_DB_CONN_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.snapshot.connectionSecretName }}
+                  key: connection
+

@@ -1,0 +1,17 @@
+#NOTE: defining a 'storage class' is not necessary when deploying to CaaS. 
+#NOTE: ddefining the actual PV is not necessary when deploying to CaaS
+#NOTE: For CaaS, we will always set storageClassname to 'nfs-client'
+#NOTE: For CaaS, we will always set volumeMode to Filesystem
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.expressApp.pvcClaimName }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.expressApp.pvcStorageSize }}
+  storageClassName: nfs-client
+  volumeMode: Filesystem

@@ -1,0 +1,38 @@
+# Reason why you might want to use a Nodeport for development mode and LoadBalancer for production environment
+# https://medium.com/@lizrice/accessing-an-application-on-kubernetes-in-docker-1054d46b64b1
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.reactApp.name }}-svc
+  labels:
+    service: {{ .Values.reactApp.name }}
+spec:
+  ports:
+  - name: {{ .Values.reactApp.name }}-access
+    port: {{ .Values.reactApp.containerPort }}
+    protocol: TCP
+    targetPort: {{ .Values.reactApp.targetPort }}
+  selector:
+    app: {{ .Values.reactApp.name }}
+  type: ClusterIP
+
+
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.expressApp.name }}-svc
+  labels:
+    service: {{ .Values.expressApp.name }}
+spec:
+  ports:
+  - name: {{ .Values.expressApp.name }}-access
+    port: {{ .Values.expressApp.containerPort }}
+    protocol: TCP
+    targetPort: {{ .Values.expressApp.targetPort }}
+  selector:
+    app: {{ .Values.expressApp.name }}
+  type: ClusterIP

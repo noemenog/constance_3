@@ -1,0 +1,10 @@
+{
+    "debug.javascript.autoAttachSmartPattern": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**",
+        "**/$KNOWN_TOOLS$/**",
+        "'**/node_modules/tsx/**'",
+        "'**/node_modules/tsup/**'",
+        "${workspaceFolder}/src/**"
+    ]
+}

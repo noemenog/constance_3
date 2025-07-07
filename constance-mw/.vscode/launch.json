@@ -1,0 +1,98 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach",
+            "type": "node",
+            "request": "attach",
+            "port": 9229,
+            "sourceMaps": true,
+            "preLaunchTask": "Run dev",
+            "skipFiles": [
+                "<node_internals>/**",
+                "${workspaceFolder}/node_modules/**"
+            ]
+        },
+        {
+            "name": "Debug with Watch Mode",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}//dist//app.js",
+            "runtimeArgs": [
+              "--inspect",
+              "--watch"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\src\\app.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "name": "tsx",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}\\src\\app.ts",
+            "runtimeExecutable": "tsx",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": [
+                "<node_internals>/**",
+                "${workspaceFolder}/node_modules/**"
+            ]
+        },
+        
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach to Process",
+            "processId": "${command:PickProcess}",
+            "port": 9229
+        },
+        {
+                "name": "TS-Node",
+                "type": "node",
+                "request": "launch",
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/ts-node",
+                "runtimeArgs": [
+                  // if you use esm
+                //   "--esm" 
+                ],
+                "program": "${workspaceFolder}\\src\\app.ts",
+                "cwd": "${workspaceRoot}",
+                "internalConsoleOptions": "openOnSessionStart",
+                "skipFiles": ["<node_internals>/**", "node_modules/**"]
+        },
+            
+        {
+                "type": "node",
+                "request": "launch",
+                "name": "Launch TSNode",
+                "runtimeArgs": [
+                    "-r",
+                    "ts-node/register",
+                    
+                ],
+                "args": [
+                    "${workspaceFolder}\\src\\app.ts"
+                ]
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Run/Attach",
+            "configurations": [
+                "tsx",
+                "Attach"
+            ],
+            "stopAll": true
+        }
+    ]
+}

@@ -1,0 +1,73 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.reactApp.name }}-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: {{ .Values.reactApp.serviceIngressAnnotations.proxyBufferSize }}
+    nginx.ingress.kubernetes.io/proxy-busy-buffers-size: {{ .Values.reactApp.serviceIngressAnnotations.proxyBusyBufferSize }}
+    nginx.ingress.kubernetes.io/proxy-max-temp-file-size: {{ .Values.reactApp.serviceIngressAnnotations.proxyMaxTempFileSize }}
+    nginx.ingress.kubernetes.io/client-body-buffer-size: {{ .Values.reactApp.serviceIngressAnnotations.proxyBufferSize }}
+
+    # AS INDICATED IN FOLLOWING LINK -- These annotations enable upload of files larger than 1mb
+    # https://intel.sharepoint.com/sites/caascustomercommunity/sitepages/ingress---uploading-large-files.aspx?web=1
+    ingress.kubernetes.io/client_max_body_size: {{ .Values.reactApp.serviceIngressAnnotations.proxyBufferSize }}
+    ingress.kubernetes.io/proxy-body-size: {{ .Values.reactApp.serviceIngressAnnotations.proxyBufferSize }}
+    nginx.ingress.kubernetes.io/client_max_body_size: {{ .Values.reactApp.serviceIngressAnnotations.proxyBufferSize }}
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ .Values.reactApp.serviceIngressAnnotations.proxyBufferSize }}
+    nginx.io/client_max_body_size: {{ .Values.reactApp.serviceIngressAnnotations.proxyBufferSize }}
+    nginx.io/proxy-body-size: {{ .Values.reactApp.serviceIngressAnnotations.proxyBufferSize }}
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.reactApp.certificateHost }}
+    secretName: {{ .Values.reactApp.certificateName }}
+  rules:
+    - host: {{ .Values.reactApp.serviceIngressHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.reactApp.name }}-svc
+                port:
+                  number: {{ .Values.reactApp.containerPort }}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.expressApp.name }}-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: {{ .Values.expressApp.serviceIngressAnnotations.proxyBufferSize }}
+    nginx.ingress.kubernetes.io/proxy-busy-buffers-size: {{ .Values.expressApp.serviceIngressAnnotations.proxyBusyBufferSize }}
+    nginx.ingress.kubernetes.io/proxy-max-temp-file-size: {{ .Values.expressApp.serviceIngressAnnotations.proxyMaxTempFileSize }}
+    nginx.ingress.kubernetes.io/client-body-buffer-size: {{ .Values.expressApp.serviceIngressAnnotations.proxyBufferSize }}
+
+    ingress.kubernetes.io/client_max_body_size: {{ .Values.expressApp.serviceIngressAnnotations.proxyBufferSize }}
+    ingress.kubernetes.io/proxy-body-size: {{ .Values.expressApp.serviceIngressAnnotations.proxyBufferSize }}
+    nginx.ingress.kubernetes.io/client_max_body_size: {{ .Values.expressApp.serviceIngressAnnotations.proxyBufferSize }}
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ .Values.expressApp.serviceIngressAnnotations.proxyBufferSize }}
+    nginx.io/client_max_body_size: {{ .Values.expressApp.serviceIngressAnnotations.proxyBufferSize }}
+    nginx.io/proxy-body-size: {{ .Values.expressApp.serviceIngressAnnotations.proxyBufferSize }}
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.expressApp.certificateHost }}
+    secretName: {{ .Values.expressApp.certificateName }}
+  rules:
+    - host: {{ .Values.expressApp.serviceIngressHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.expressApp.name }}-svc
+                port:
+                  number: {{ .Values.expressApp.containerPort }}
+
+

@@ -1,0 +1,363 @@
+
+@font-face {
+  font-family: "intelone";
+  src: local("intelone"),
+    url("./assets/fonts/intelone-display-light.woff2") format("woff2");
+} 
+
+
+@font-face {
+  font-family: "intelclear";   /*Can be any text*/
+  src: local("intelclear"),
+    url("./assets/fonts/intel-clear-latin.woff2") format("woff2");
+}
+
+
+html, 
+body,
+#root,
+.app,
+.content {
+  height: 100%;
+  width: 100%;
+  font-family: 'intelclear';
+  /* font-size: 12; */
+  /* font-family: 'Source Sans Pro', sans-serif; */
+}
+
+.ag-theme-alpine-dark, .ag-theme-alpine {
+  /* --ag-font-family: "intelclear" !important; */
+  --ag-font-size: 13px !important;
+}
+.ag-cell {
+  /* background-color: #2244CC44; */
+  font-size: 13px;
+}
+
+.ag-align-center-header .ag-header-cell-label {
+  align-items: center;
+  justify-content: center;
+}
+
+
+.app {
+  display: flex;
+  position: relative;
+}
+
+/* scrollbar */
+::-webkit-scrollbar{
+  width: 10px;
+}
+
+/* track */
+::-webkit-scrollbar-track {
+  background: #e0e0e0;
+}
+
+/* handle */
+::-webkit-scrollbar-thumb{
+  background: #888;
+}
+
+/* handle on hover */
+::-webkit-scrollbar-track:hover{
+  background: #555
+}
+
+
+
+
+/* ======================================================================================================*/
+/* GLIDE GRID: -- for dropdown-cell options text in the grid (length matching) */
+/* ======================================================================================================*/
+.gdg-p13nj8j0 {
+  color:#e0e0e0 !important;
+}
+
+
+
+/* ======================================================================================================*/
+/* MGT-REACT:  Login and people picker CSS */
+/* ======================================================================================================*/
+.login {
+  /* --login-signed-out-button-background: red; */
+  /* --login-signed-out-button-hover-background: orange; */
+  /* --login-signed-out-button-text-color: purple; */
+  /* --login-signed-in-background: whiteSmoke; */
+
+  --login-signed-in-hover-background: #145ca4;
+  --login-button-padding: 2px;
+  --login-popup-background-color: #1976d2;
+  --login-popup-text-color: whiteSmoke;
+  --login-popup-padding: 8px;
+
+  /* --login-popup-command-button-background-color: orange; */
+  /* --login-add-account-button-text-color: yellow; */
+  /* --login-add-account-button-background-color: red; */
+  /* --login-add-account-button-hover-background-color: purple; */
+  /* --login-command-button-background-color: orange; */
+  /* --login-command-button-hover-background-color: purple; */
+  /* --login-command-button-text-color: red; */
+
+  /** person component tokens **/
+  --person-line1-text-color: whitesmoke;
+  --person-line2-text-color: whiteSmoke;
+  --login-person-avatar-size: 22px;
+
+}
+
+.people-picker {
+  --people-picker-selected-option-background-color: rgb(31, 40, 54, 0.85);
+  --people-picker-selected-option-highlight-background-color: red;
+  
+  --people-picker-dropdown-background-color: #1f2a40;
+  --people-picker-dropdown-result-background-color: #1F2836;
+  --people-picker-dropdown-result-hover-background-color: rgb(102, 153, 153, 0.2);
+  --people-picker-dropdown-result-focus-background-color: green;
+
+  --people-picker-no-results-text-color: #efefef;
+  
+  --people-picker-input-background: #909090;
+  --people-picker-input-border-color: #c6c6c6;
+  --people-picker-input-hover-background: #c0c0c0;
+  --people-picker-input-hover-border-color: #1f2a40;
+
+  --people-picker-input-focus-background: #c0c0c0;
+  --people-picker-input-focus-border-color: #1f2a40;
+
+  --people-picker-input-placeholder-focus-text-color: #2a2a2a;
+  --people-picker-input-placeholder-hover-text-color: #2a2a2a;
+  --people-picker-input-placeholder-text-color: #2a2a2a;
+  --people-picker-search-icon-color: #2a2a2a;
+
+  --people-picker-remove-selected-close-icon-color: #70d8bd;
+
+  /** Style for the avatar-size in the people-picker **/
+  --people-picker-result-person-avatar-size: 50px;
+  --people-picker-selected-person-avatar-size: 30px;
+
+  /** You can also change the person tokens **/
+  --person-line1-text-color: #e0e0e0;
+  --person-line2-text-color: #70d8bd;
+}
+
+#people-picker-input .root{
+  border-radius: "44px" !important;
+}
+
+.people-picker:root{
+  border-radius: "44px" !important;
+}
+
+fluent-text-field .root{
+  border-radius: "44px" !important;
+}
+
+
+
+/* ======================================================================================================*/
+/* Mantine Tabs */
+/* ======================================================================================================*/
+.tabs {
+  margin-top: 20px;
+  /* min-width: 750px; */
+  /* width: 750px; */
+}
+.tabstab {
+  outline: 1px solid #bdbcbc !important;
+  outline-offset: 0px;
+  background-color: #1f2a40 !important;
+  border-top-right-radius: 15px !important;
+  border-top-left-radius: 15px !important;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  height: 30px;
+  width: 170px;
+}
+
+.tabstab:hover {
+  outline: 1px solid #bdbcbc !important;
+  background-color: #141b2d !important;
+  color: #efefef
+}
+.tabstab[data-active] {
+  outline: 1px solid #228be6 !important;
+  background-color: #d9d9d9 !important;
+  color: #333333
+}
+
+.tabspanel {
+  margin-top: 4px !important;
+}
+
+
+/* ======================================================================================================*/
+/* Mantine Accordion for routing rules */
+/* ======================================================================================================*/
+.rules-acc-control {
+  outline: 1px solid #bdbcbc !important;
+  background-color: #1f2a40 !important;
+  color: #e0e0e0 !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+}
+
+.rules-acc-control:hover {
+  outline: 1px solid #bdbcbc !important;
+  background-color: #141b2d !important;
+  color: #e0e0e0 !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+}
+
+.rules-acc-control[data-active]{
+  outline: 1px solid #228be6 !important;
+  background-color: #b5b5b5 !important;  /*d9d9d9*/
+  color: #262626 !important;  /*#262626*/
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+}
+
+.rules-acc-label {
+  font-size: 14px !important;
+}
+
+
+.rules-acc-root {
+  padding: 0px !important;
+}
+
+.rules-acc-panel {
+  background-color: #232323 !important;
+}
+
+
+/* ======================================================================================================*/
+/* Dnd Tree for netclass hierarchy */
+/* ======================================================================================================*/
+.nctree-root{
+  overflow-y: none;
+  
+}
+
+.nctree-list-node {
+  list-style-type: none;
+  list-style: none;
+  min-width: 400px;
+}
+
+.nctree-dragging-source{
+  opacity: 0.3;
+}
+
+.nctree-drop-target{
+  background-color: #141b2d;
+}
+
+/*  help from: https://codesandbox.io/p/sandbox/custom-node-ts-6ws8ou?file=%2Fsrc%2FApp.module.css%3A6%2C4&from-embed=  */
+.cn-root {
+  align-items: center;
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  height: 25px;
+  
+  padding-inline-end: 8px;
+}
+
+.cn-expandIconWrapper {
+  align-items: center;
+  font-size: 0;
+  cursor: pointer;
+  display: flex;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+  transition: transform linear .1s;
+  transform: rotate(0deg);
+}
+
+.cn-expandIconWrapper.cn-isOpen {
+  transform: rotate(90deg);
+}
+
+.cn-labelGridItem {
+  padding-inline-start: 8px;
+}
+
+.cn-labelGridItem:hover {
+  /* colors.primary[600] */
+  background-color: #101624;
+  border-radius: 3px;  
+}
+.cn-hoverBox:hover {
+  /* colors.primary[600] */
+  background-color: #101624;
+  border-radius: 3px;  
+}
+
+
+
+/* ======================================================================================================*/
+/* EditorJS styling */
+/* ======================================================================================================*/
+.editor {
+  box-shadow: 0px 0px 20px 0px rgba(76, 87, 125, 0.02);
+  background: #fff;
+  padding: 20px 30px;
+  width: 60%;
+  margin: 50px auto;
+}
+
+/* body {
+  background: #f5f8fa;
+} */
+
+#editorjs-container {
+  background-color: #f9f9f9;
+  padding: 20px 30px;
+  margin-bottom: 20px;
+}
+
+.ce-toolbar__content, .ce-block__content {
+  max-width: unset;
+  width: 92% !important;
+}
+
+.editorjs-codeFlask_Wrapper .editorjs-codeFlask_LangDisplay {
+  max-width: unset;
+  height: unset !important;
+}
+
+.editor button {
+  border: none;
+  padding: 10px 20px;
+  background: #2cd3ff;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+
+
+
+/* ======================================================================================================*/
+/* RoutingRules List Items */
+/* ======================================================================================================*/
+.staggered-list-content {
+  width: "100%";
+  margin: 2rem auto;
+}
+.list {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 0;
+}
+.list li {
+  width: 100%;
+}
+.list li + li {
+  margin-top: 1rem;
+}

@@ -1,0 +1,368 @@
+//Areas where testing was hardcoded:
+
+main.tsx:
+    // Handle msal necessities
+    //handling local env
+    if(procStage.toUpperCase() !== "LOCAL") {
+        Providers.globalProvider = new Msal2Provider({
+            clientId: 'a7f7c6ed-36da-44d2-9779-68d0fe2aca12',
+            authority: "https://login.microsoftonline.com/46c98d88-e344-4ed4-8496-4ed7712e255d",
+            scopes: ['user.read', 'openid', 'profile', 'user.readbasic.all', 'group.read.all'],
+            redirectUri: "/"
+        })
+    }
+
+topBar.tsx:
+    //TODO: Remove this 
+    //WARNING!!! - for testing purposes:
+    useMemo(() => {
+        let user : LoggedInUser = {
+            id: "11234456",
+            email: "megatron@maximals.com",
+            wwid: "11234456",
+            idsid: "megatron",
+            perms: new Map<string, string>()
+        }
+        onLoginSuccessful(user)
+        setLoggedInUser(user) //Important!
+        displaySnackBarMessage(UIMessageType.SUCCESS_MSG, "User is signed in"); 
+    }, [appName]);
+    //============== END TEST SESSION - remember to delete this whole shit-=========================
+
+    {/* <Login className="login" show-presence={true} logoutCompleted={(e: any) => handleLogoutEvent(e)}  loginCompleted={(e: any) => handleLoginEvent(e)} loginView='compact'/> */}
+
+
+
+FetchData.ts:
+    let procStage = import.meta.env.VITE_STAGE ?? "DEV";
+    //handling local env
+    if(procStage.toUpperCase() !== "LOCAL") {
+        //TODO: Remember to remove this
+        //WARNING / DANGER : mock Data injected here
+        const mocker = HttpRequestMock.setup();
+        mocker.get(url, MOCK_INIT_CONFIG)
+        //============ END MOCK DATA ====================
+    }
+
+
+//=================================END TEST CODE ========================================
+
+
+
+    // projectId = "1234x5678y"
+    // projectName = "SOME_PROJECT_NAME_FROM_"
+
+    ============================================================
+
+// function getScreenHeight(){
+//     if((window.screen.height-10) > 775){
+//         return window.screen.height-10
+//     }
+//     else{
+//         return 775
+//     }
+//   }
+
+
+
+// TODO: CHEck here for what to do about screen height::
+//      https://stackoverflow.com/questions/35153599/reactjs-get-height-of-an-element
+
+
+============================================================================
+
+// DO NOT DELETE - Good info!
+    // useLayoutEffect(() => {
+    //     if(context.heightForSidebar != ref?.current?.scrollHeight){
+    //         context.setSidebarHeight((ref?.current?.scrollHeight as number) - 30)
+    //     }
+    //     return () => {
+    //         context.setSidebarHeight(-1)
+    //     };
+    // }, [])
+
+
+==============================================================
+
+
+
+let agtheme = theme.palette.mode === 'dark' ? 'ag-theme-alpine-dark' : 'ag-theme-alpine'
+let agGridGroupRowTextColor = theme.palette.mode === 'dark' ?  colors.greenAccent[400] : colors.redAccent[400]
+let agGridProjNameLinkColor = theme.palette.mode === 'dark' ? colors.blueAccent[300] : "#0000EE;"
+    
+================================================================
+
+
+
+dark:
+    main navy:
+        light background 400: #1f2a40
+        dark background 600:  #101624
+
+    green highlight
+        light 400: #70d8bd
+        dark 800 : #1e5245
+
+
+
+
+
+========================= OLD
+
+
+    ? {
+        grey: {
+            100: "#e0e0e0",
+            200: "#c2c2c2",
+            300: "#a3a3a3",
+            400: "#858585",
+            500: "#666666",
+            600: "#525252",
+            700: "#3d3d3d",
+            800: "#292929",
+            900: "#141414"
+        },
+        primary: {
+            100: "#d0d1d5",
+            // 200: "#a1a4ab",
+            // 300: "#727681",
+            400: "#1f2a40",
+            500: "#141b2d",
+            600: "#101624",
+            // 700: "#0c101b",
+            // 800: "#080b12",
+            // 900: "#040509"
+        },
+        greenAccent: {
+            // 100: "#dbf5ee",
+            // 200: "#b7ebde",
+            // 300: "#94e2cd",
+            400: "#70d8bd",
+            // 500: "#4cceac",
+            // 600: "#3da58a",
+            // 700: "#2e7c67",
+            800: "#1e5245",
+            // 900: "#0f2922",
+        },
+        // redAccent: {
+        //     100: "#f8dcdb",
+        //     200: "#f1b9b7",
+        //     300: "#e99592",
+        //     400: "#e2726e",
+        //     500: "#db4f4a",
+        //     600: "#af3f3b",
+        //     700: "#832f2c",
+        //     800: "#58201e",
+        //     900: "#2c100f",
+        // },
+        blueAccent: {
+            // 100: "#e1e2fe",
+            // 200: "#c3c6fd",
+            300: "#a4a9fc",
+            400: "#868dfb",
+            // 500: "#6870fa",
+            // 600: "#535ac8",
+            // 700: "#3e4396",
+            // 800: "#2a2d64",
+            // 900: "#151632",
+        }
+    }
+    : {
+        grey: {
+            100: "#141414",
+            200: "#292929",
+            300: "#3d3d3d",
+            400: "#525252",
+            500: "#666666",
+            600: "#858585",
+            700: "#a3a3a3",
+            800: "#c2c2c2",
+            900: "#e0e0e0",
+        },
+        primary: {
+            100: "#040509",
+            200: "#080b12",
+            300: "#0c101b",
+            400: "#f2f0f0",
+            500: "#141b2d",
+            600: "#434957",
+            700: "#727681",
+            800: "#a1a4ab",
+            900: "#d0d1d5",
+        },
+        greenAccent: {
+            100: "#0f2922",
+            200: "#1e5245",
+            300: "#2e7c67",
+            400: "#3da58a",
+            500: "#4cceac",
+            600: "#70d8bd",
+            700: "#94e2cd",
+            800: "#b7ebde",
+            900: "#dbf5ee",
+        },
+        redAccent: {
+            100: "#2c100f",
+            200: "#58201e",
+            300: "#832f2c",
+            400: "#af3f3b",
+            500: "#db4f4a",
+            600: "#e2726e",
+            700: "#e99592",
+            800: "#f1b9b7",
+            900: "#f8dcdb",
+        },
+        blueAccent: {
+            100: "#151632",
+            200: "#2a2d64",
+            300: "#3e4396",
+            400: "#535ac8",
+            500: "#6870fa",
+            600: "#868dfb",
+            700: "#a4a9fc",
+            800: "#c3c6fd",
+            900: "#e1e2fe",
+        }
+
+        =======================================================
+
+
+        return {
+        palette: {
+            mode: mode,
+            ...(mode === 'dark'
+                ? {
+                    primary:{
+                        // main: colors.primary[500],
+                        main: colors.primary[100],
+                    },
+                    secondary: {
+                        main:colors.greenAccent[500] ?? "#ff3300",
+                    },
+                    neutral: {
+                        dark: colors.grey[700],
+                        main: colors.grey[500],
+                        light: colors.grey[100],
+                    },
+                    background: {
+                        default: colors.primary[500],
+                    }
+                }
+                : {
+                    primary:{
+                        main: colors.primary[100],
+                    },
+                    secondary: {
+                        main:colors.greenAccent[500],
+                    },
+                    neutral: {
+                        dark: colors.grey[700],
+                        main: colors.grey[500],
+                        light: colors.grey[100],
+                    },
+                    background: {
+                        default: "#fcfcfc",
+                    }
+                }
+            ),
+        },
+
+        ===============================================
+
+
+        // typography: {
+        //     fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
+        //     fontSize: 12,
+        //     h1: {
+        //         fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
+        //         fontSize: 40,
+        //     },
+        //     h2: {
+        //         fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
+        //         fontSize: 32,
+        //     },
+        //     h3: {
+        //         fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
+        //         fontSize: 24,
+        //     },
+        //     h4: {
+        //         fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
+        //         fontSize: 20,
+        //     },
+        //     h5: {
+        //         fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
+        //         fontSize: 16,
+        //     },
+        //     h6: {
+        //         fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
+        //         fontSize: 14,
+        //     },
+        // }
+
+===========================================
+
+
+// export interface SpButtomProps {
+//     height: any,
+//     width: any,
+//     label: string,
+//     icon: any,
+//     onCLick: any
+// }
+// export const SpButtom = ({height, width, label, icon, onCLick} : SpButtomProps) => {
+//     const theme = useTheme();
+//     const colors = tokens(theme.palette.mode);
+//     const context = useContext(SpiderContext)  
+    
+//     return (
+//         <Button
+//             size="small"
+//             variant="outlined"
+//             startIcon={icon}
+//             // sx={{ backgroundColor: colors.blueAccent[400], width:160 }}
+//             sx={{ textTransform: 'none', color: "#f2f2f2", backgroundColor: colors.blueAccent[600], ':hover': { bgcolor: colors.blueAccent[600]} }}
+//             onClick={onCLick}
+//         >
+//             {label}
+//         </Button>
+//     );
+// }
+
+
+=======================================
+
+    // let specStyle = {
+    //     "& label.Mui-focused": {
+    //         color: "gray"
+    //     },
+    //     "& .MuiOutlinedInput-root": {
+    //         "&.Mui-focused fieldset": {
+    //             borderColor: "gray",
+    //             color: "green"
+    //         }
+    //     },
+    //     "& .MuiOutlinedInput-notchedOutline": {
+    //         borderColor: "gray"
+    //     },
+    //     input: {
+    //         "&::placeholder": {
+    //           opacity: 1,
+    //           color: "green", // Change to your desired color
+    //         },
+    //       },
+    //     // input: {
+    //     //     "&::placeholder": {
+    //     //          opacity: 1,
+    //     //          color: "primary"
+    //     // }},
+    //     // "& .MuiInputBase-root.MuiOutlinedInput-root :placeholder": {
+    //     // color: "blue"
+    //     // },
+    //     // "& .MuiFormLabel-root-MuiInputLabel-root": {
+    //     //     color: "lime"
+    //     // },
+    //     // "& input:placeholder": {
+    //     //     color: "green"
+    //     //   },
+    // }
+

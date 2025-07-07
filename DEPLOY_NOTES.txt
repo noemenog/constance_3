@@ -1,0 +1,263 @@
+
+
+NOTES::
+
+Kubectl is used for interacting with CaaS kubernetes cluster.
+Make sure kubectl utility is installed and configured:
+	https://intel.sharepoint.com/sites/caascustomercommunity/sitepages/configure-kubernetes-cli--kubectl.aspx?web=1
+
+
+Docker is used for interacting with Harbor registry and building containers
+If windows password has changed (or if first time user), perform login to registry using following command:
+    docker login amr-registry.caas.intel.com
+
+
+helm also interacts with Harbor registry (to push helm chart), and is used for building helm chart
+Helm version 3.11 or above is recommended!!
+To create helm chart:
+    helm create constance-helm
+
+		NOTES -- regarding K8s secrets for db connection string:
+		# 
+		# Use the following syntax to convert a string to base64 and back
+		# LINUX: 
+		#     echo -n "<myConnectionString>" | base64
+		#     echo  4oCcV2VsY29tZSB0byBMaW51eOKAnQo= | base64 --decode
+		#
+		# POWERSHELL:
+		#     [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('Motörhead'))
+		#     [Text.Encoding]::Utf8.GetString([Convert]::FromBase64String('TW90w7ZyaGVhZA=='))
+		#
+
+
+Dockerize the react frontend:
+	https://berkselvi.dev/posts/how-to-deploy-a-react-app-with-nginx-using-docker-with-react-router-dom/
+
+NOTE: for frontend, we need to create a nginx.conf file with the following content. The file should reside in same location as Dockerfile
+	
+		server {
+		listen 80;
+		server_name example.com;
+		root /usr/share/nginx/html;
+		index index.html;
+		location / {
+			try_files $uri $uri/ /index.html;
+		}
+		}
+
+
+Dockerize the middleware app:
+	https://dev.to/bravinsimiyu/how-to-deploy-a-multi-container-reactjs-and-nodejs-application-with-docker-compose-334h
+
+
+Set proxy in all Dockerfiles
+		# Set proxy environment variables
+		ENV HTTP_PROXY="http://proxy-dmz.intel.com:912"
+		ENV HTTPS_PROXY="http://proxy-dmz.intel.com:912"
+		ENV NO_PROXY="intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,.local,127.0.0.0/8,134.134.0.0/16"
+
+
+Create the following files in both frontend and middleware repos:
+	.github/workflows/dev.yaml
+	.github/workflows/prod.yaml
+
+	File content for both (do make changes where necessary acording to environment):
+
+
+Make sure vite app has explicit port number so that the server does not randomly choose. 
+	Set port number in vite.config.ts
+		https://stackoverflow.com/a/73213312
+
+
+
+================================================================================================
+================================================================================================
+================================================================================================
+
+
+
+--------------------------- Build and Push FRONTEND image to Harbor ---------------------------- 
+
+first make sure you are looged in to docker by running the following command:
+    docker login amr-registry.caas.intel.com
+
+Second check if helm is installed:
+    helm --help
+
+NOTE below:
+	The build mode (BUILD_MODE=dev) is an "ARG" that we have set in frontend dockerfile. 
+	This will allow us to pass in build mode (aka environment) to vite build procvess diuring CI/CD / Github Actions
+
+So... what does an app need to accomplish full automation:
+	 - DockerFile for both frontend and backend
+	 - make sure to set proxy environment variables in docker files
+	 - nginx.conf for frontend 
+	 - proper versioninng in package.config file (Github action uses this)
+	 - Helm chart defined, built and pushed to Harbor (Github action will pull theis and run it)
+	 - Github action workflows (dev.yaml and prod.yaml)
+	 - Change the top listed github actions workflow variables according to project and environment
+	 - Set the necessary Secrets in Github - needed for Github actions workflows
+
+	
+===================================================================================================
+===================================================================================================
+Installing signoz:
+	First add the signoz repo for helm by running following commands:
+		helm repo add signoz https://charts.signoz.io
+		helm repo list
+
+
+===================================================================================================
+===================================================================================================
+Throwaway notes - that are no longer relevant...:
+
+Certificate management:
+	https://wiki.ith.intel.com/pages/viewpage.action?pageId=3214351292#ACMEAutomation-Caddy
+	
+	do setup IAPM for ACME Automation via:  https://intel.service-now.com/nav_to.do?uri=%2Fcom.glideapp.servicecatalog_cat_item_view.do%3Fv%3D1%26sysparm_id%3D51bea17b1bff311041a864ea234bcb7e%26sysparm_link_parent%3Db4a907671be7e010bcb7326edc4bcb67%26sysparm_catalog%3D10733351db0a94102cc2a5bb1396190b%26sysparm_catalog_view%3Dcatalog_IT_Service_Catalog%26sysparm_view%3Dcatalog_IT_Service_Catalog
+
+
+
+===================================================================================================
+===================================================================================================
+
+TO UNINSTALL everything:
+	helm uninstall constance-helm -n dtd-constance
+
+
+
+
+
+===========================================================================================
+================================== PROD =========================================================
+
+cd constance-fe;
+docker build --build-arg BUILD_MODE=prod --tag amr-registry.caas.intel.com/dtd-tools/constance-fe-prod:3.1.12 -f ./Dockerfile .
+docker push amr-registry.caas.intel.com/dtd-tools/constance-fe-prod:3.1.12
+docker pull amr-registry.caas.intel.com/dtd-tools/constance-fe-prod:3.1.12
+cd ..
+
+cd constance-mw;
+docker build --tag amr-registry.caas.intel.com/dtd-tools/constance-mw-prod:3.1.12 -f ./Dockerfile .
+docker push amr-registry.caas.intel.com/dtd-tools/constance-mw-prod:3.1.12
+docker pull amr-registry.caas.intel.com/dtd-tools/constance-mw-prod:3.1.12
+cd ..
+
+cd constance-helm;
+helm dependency update .\constance-helm-prod
+helm package .\constance-helm-prod
+helm push .\constance-helm-prod-1.0.0.tgz oci://amr-registry.caas.intel.com/dtd-tools/
+helm pull oci://amr-registry.caas.intel.com/dtd-tools/constance-helm-prod --version 1.0.0
+helm upgrade --install constance-helm-prod oci://amr-registry.caas.intel.com/dtd-tools/constance-helm-prod --version 1.0.0 -n dtd-constance --values ..\values-override-production.yaml
+
+
+
+
+
+===========================================================================================
+================================== DEV =========================================================
+
+cd constance-fe;
+docker build --build-arg BUILD_MODE=dev --tag amr-registry.caas.intel.com/dtd-tools/constance-fe-dev:3.1.12 -f ./Dockerfile .
+docker push amr-registry.caas.intel.com/dtd-tools/constance-fe-dev:3.1.12
+docker pull amr-registry.caas.intel.com/dtd-tools/constance-fe-dev:3.1.12
+cd ..
+
+cd constance-mw;
+docker build --tag amr-registry.caas.intel.com/dtd-tools/constance-mw-dev:3.1.12 -f ./Dockerfile .
+docker push amr-registry.caas.intel.com/dtd-tools/constance-mw-dev:3.1.12
+docker pull amr-registry.caas.intel.com/dtd-tools/constance-mw-dev:3.1.12
+cd ..
+
+cd constance-helm;
+helm dependency update .\constance-helm-dev
+helm package .\constance-helm-dev
+helm push .\constance-helm-dev-1.0.0.tgz oci://amr-registry.caas.intel.com/dtd-tools/
+helm pull oci://amr-registry.caas.intel.com/dtd-tools/constance-helm-dev --version 1.0.0
+
+
+helm upgrade --install constance-helm-dev oci://amr-registry.caas.intel.com/dtd-tools/constance-helm-dev --version 1.0.0 -n dtd-constance --values ..\values-override-development.yaml
+cd ..
+
+
+
+
+
+
+
+===========================================================================================
+================================== BUILD AND PUSH BOTH =========================================================
+
+
+cd constance-fe;
+docker build --build-arg BUILD_MODE=dev --tag amr-registry.caas.intel.com/dtd-tools/constance-fe-dev:3.1.12 -f ./Dockerfile .
+docker push amr-registry.caas.intel.com/dtd-tools/constance-fe-dev:3.1.12
+docker pull amr-registry.caas.intel.com/dtd-tools/constance-fe-dev:3.1.12
+cd ..
+
+cd constance-mw;
+docker build --tag amr-registry.caas.intel.com/dtd-tools/constance-mw-dev:3.1.12 -f ./Dockerfile .
+docker push amr-registry.caas.intel.com/dtd-tools/constance-mw-dev:3.1.12
+docker pull amr-registry.caas.intel.com/dtd-tools/constance-mw-dev:3.1.12
+cd ..
+
+
+
+
+cd constance-fe;
+docker build --build-arg BUILD_MODE=prod --tag amr-registry.caas.intel.com/dtd-tools/constance-fe-prod:3.1.12 -f ./Dockerfile .
+docker push amr-registry.caas.intel.com/dtd-tools/constance-fe-prod:3.1.12
+docker pull amr-registry.caas.intel.com/dtd-tools/constance-fe-prod:3.1.12
+cd ..
+
+cd constance-mw;
+docker build --tag amr-registry.caas.intel.com/dtd-tools/constance-mw-prod:3.1.12 -f ./Dockerfile .
+docker push amr-registry.caas.intel.com/dtd-tools/constance-mw-prod:3.1.12
+docker pull amr-registry.caas.intel.com/dtd-tools/constance-mw-prod:3.1.12
+cd ..
+
+
+cd constance-helm;
+helm upgrade --install constance-helm-dev oci://amr-registry.caas.intel.com/dtd-tools/constance-helm-dev --version 1.0.0 -n dtd-constance --values ..\values-override-development.yaml
+cd ..
+
+cd constance-helm;
+helm upgrade --install constance-helm-prod oci://amr-registry.caas.intel.com/dtd-tools/constance-helm-prod --version 1.0.0 -n dtd-constance --values ..\values-override-production.yaml
+cd ..
+
+
+
+# login to harbor registry
+docker login amr-registry.caas.intel.com
+
+# built image with tag specified
+docker build --tag amr-registry.caas.intel.com/dtd-tools/constance-mw-prod:3.1.12 -f ./Dockerfile .
+
+# push image to harbor
+docker push amr-registry.caas.intel.com/dtd-tools/constance-mw-prod:3.1.12
+
+#pull image from harbor (for sanity sake)
+docker pull amr-registry.caas.intel.com/dtd-tools/constance-mw-prod:3.1.12
+
+# lastly... use kubectl cmd line tool to apply yaml files for Rancher/Kubernetes, or apply it directly via rancher UI
+
+
+
+
+----------------------------------------------------------------------
+https://www.shellhacks.com/git-create-tag-push-tag-to-remote/
+
+NOTE: github tag naming convention: 
+	SPIDER_3.1.12
+
+Creating tags: 
+	OLD WAY:: git tag SPIDER_3.1.12 -a -m "SPIDER_3.1.12"
+	git tag v3.1.12 -a -m "v3.1.12"
+
+Viewing all tags:
+	git tag
+	git describe --tags
+
+tags are not pushed to remote by default. Need to do the following:
+	git push origin --tags
+	git push origin v3.1.12
