@@ -23,21 +23,14 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import Error404Page from './CommonComponents/ErrorDisplay';
 import { ActionSceneEnum } from './DataModels/Constants';
-import C2CLayoutView from './Scenes/C2CLayout/C2CLayoutView';
-import DefaultConstraintsView from './Scenes/DefaultConstraints/DefaultConstraintsView';
-import InterfacesView from './Scenes/Interface/InterfacesView';
-import NetManagementView from './Scenes/Nets/NetManagementView';
-import RuleAreas from './Scenes/PkgLayout/RuleAreas';
-import Stackup from './Scenes/PkgLayout/Stackup';
-import PowerInfoView from './Scenes/Power/PowerInfoView';
-import ProjectDetails from './Scenes/Project/ProjectDetails';
-import ProjectList from './Scenes/Project/ProjectList';
+import AppInfoDetails from './Scenes/AppInfo/AppInfoDetails';
+import AppInfoList from './Scenes/AppInfo/AppInfoList';
 import FAQPage from './Scenes/Support/FAQPage';
 import LogView from './Scenes/Support/LogView';
-import Validations from './Scenes/Support/Validations';
-import { baseRouteLoader, projectListLoader, projectDetailsLoader, defaultConstraintsLoader, netManagementLoader, interfacesLoader, 
-    c2cLayoutLoader, powerInfoLoader, validationsLoader, logsLoader, faqLoader, ruleAreaLoader, layerGroupsLoader, stackupLoader } from './BizLogicUtilities/RouterLoaderFuncs';
-import LayerGroups from './Scenes/PkgLayout/LayerGroups';
+import { baseRouteLoader, appInfoListLoader, appInfoDetailsLoader as appInfoDetailsLoader,
+    logsLoader, faqLoader, comparisonLoader, bucketConfigLoader } from './BizLogicUtilities/RouterLoaderFuncs';
+import BucketDetails222 from './Scenes/Bucket/BucketDetails222';
+
 
 
 
@@ -65,95 +58,39 @@ const router = createBrowserRouter([
         element: <App />,
         errorElement: <Error404Page />,
         loader: ({ request, params }: LoaderFunctionArgs) => baseRouteLoader(request, params),
-        // hydrateFallbackElement: <Typography noWrap component="div" sx={{ mt: 3, ml: 2, color: "black", fontStyle: "italic"}}> {`Almost done loading...`} </Typography>,
         children: [
             {
-                path: "projectlist",
-                element: <ProjectList />,
-                loader: ({ request, params }: LoaderFunctionArgs) => projectListLoader(request, params),
+                path: "list/:env",
+                element: <AppInfoList />,
+                loader: ({ request, params }: LoaderFunctionArgs) => appInfoListLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.PROJECT}/:projectId/:tabInfo`,
-                element: <ProjectDetails />,
-                loader: ({ request, params }: LoaderFunctionArgs) => projectDetailsLoader(request, params),
+                path: `${ActionSceneEnum.APPINFO}/:env/:appId/:tabInfo`,
+                element: <AppInfoDetails />,
+                loader: ({ request, params }: LoaderFunctionArgs) => appInfoDetailsLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.PROJECT}/:projectId`,
-                element: <ProjectDetails />,
-                loader: ({ request, params }: LoaderFunctionArgs) => projectDetailsLoader(request, params),
+                path: `${ActionSceneEnum.APPINFO}/:env/:appId`,
+                element: <AppInfoDetails />,
+                loader: ({ request, params }: LoaderFunctionArgs) => appInfoDetailsLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.STACKUP}/:projectId`,
-                element: <Stackup />,
-                loader: ({ request, params }: LoaderFunctionArgs) => stackupLoader(request, params),
+                path: `${ActionSceneEnum.CONFIGURATIONS}/:env/:appId/:bucketId/:configId/:version`,
+                element: <BucketDetails222 />,
+                loader: ({ request, params }: LoaderFunctionArgs) => bucketConfigLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.LAYERGROUPS}/:projectId`,
-                element: <LayerGroups />,
-                loader: ({ request, params }: LoaderFunctionArgs) => layerGroupsLoader(request, params),
+                path: `${ActionSceneEnum.CONFIGURATIONS}/:env/:appId/:bucketId`,
+                element: <BucketDetails222 />,
+                loader: ({ request, params }: LoaderFunctionArgs) => bucketConfigLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.RULEAREAS}/:projectId`,
-                element: <RuleAreas />,
-                loader: ({ request, params }: LoaderFunctionArgs) => ruleAreaLoader(request, params),
+                path: `${ActionSceneEnum.COMPARE}/:env/:appId/:bucketId/:destEnv`,
+                element: <BucketDetails222 />,
+                loader: ({ request, params }: LoaderFunctionArgs) => comparisonLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.DEFAULTCONSTRAINTS}/:projectId`,
-                element: <DefaultConstraintsView />,
-                loader: ({ request, params }: LoaderFunctionArgs) => defaultConstraintsLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.NETS}/:projectId/:tabInfo`,
-                element: <NetManagementView />,
-                loader: ({ request, params }: LoaderFunctionArgs) => netManagementLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.NETS}/:projectId`,
-                element: <NetManagementView />,
-                loader: ({ request, params }: LoaderFunctionArgs) => netManagementLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.INTERFACES}/:projectId`,
-                element: <InterfacesView />,
-                loader: ({ request, params }: LoaderFunctionArgs) => interfacesLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.INTERFACES}/:projectId/:interfaceId`,
-                element: <InterfacesView />,
-                loader: ({ request, params }: LoaderFunctionArgs) => interfacesLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.INTERFACES}/:projectId/:interfaceId/:tabInfo`,
-                element: <InterfacesView />,
-                loader: ({ request, params }: LoaderFunctionArgs) => interfacesLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.C2CLAYOUT}/:projectId`,
-                element: <C2CLayoutView />,
-                loader: ({ request, params }: LoaderFunctionArgs) => c2cLayoutLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.C2CLAYOUT}/:projectId/:ruleAreaId`,
-                element: <C2CLayoutView />,
-                loader: ({ request, params }: LoaderFunctionArgs) => c2cLayoutLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.POWERINFO}/:projectId/:tabInfo`,
-                element: <PowerInfoView />,
-                loader: ({ request, params }: LoaderFunctionArgs) => powerInfoLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.POWERINFO}/:projectId`,
-                element: <PowerInfoView />,
-                loader: ({ request, params }: LoaderFunctionArgs) => powerInfoLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.VALIDATIONS}/:projectId`,
-                element: <Validations />,
-                loader: ({ request, params }: LoaderFunctionArgs) => validationsLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.LOGS}/:projectId`,
+                path: `${ActionSceneEnum.LOGS}/:env/:appId`,
                 element: <LogView />,
                 loader: ({ request, params }: LoaderFunctionArgs) => logsLoader(request, params),
             },
@@ -178,71 +115,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 
 
-
-
-//=============================================================
-
-
-// import { MsalProvider } from '@azure/msal-react';
-// import { Configuration, PublicClientApplication } from '@azure/msal-browser';
-
-
-// const msalConfig = {
-//     auth: {
-//         clientId: "your-client-id",
-//         authority: "https://login.microsoftonline.com/your-tenant-id",
-//         redirectUri: "http://localhost:3000"
-//     }
-// };
-
-// export const msalInstance = new PublicClientApplication(msalConfig);
-
-// ReactDOM.createRoot(document.getElementById('root')!).render(
-//     <MsalProvider instance={Providers.globalProvider.publicClientApplication}><React.StrictMode>
-//         <RouterProvider router={router} />
-//     </React.StrictMode></MsalProvider>
-// )
-
-
-
-// import { MsalProvider } from '@azure/msal-react';
-// import { Configuration, PublicClientApplication } from '@azure/msal-browser';
-
-
-// MSAL configuration
-// const configuration: Configuration = {
-//     auth: {
-//         clientId: 'a7f7c6ed-36da-44d2-9779-68d0fe2aca12',
-//         authority: "https://login.microsoftonline.com/46c98d88-e344-4ed4-8496-4ed7712e255d",
-//         redirectUri: "/"
-//     }
-// };
-
-
-// const silentRequest = {
-//     scopes: ["user.read", "mail.send"]
-// };
-// const pca = new PublicClientApplication(configuration);
-
-// pca.acquireTokenSilent(silentRequest)
-// .then(response => {
-//     console.log("Access token acquired silently: ", response.accessToken);
-// })
-// .catch(error => {
-//     console.error("Silent token acquisition failed: ", error);
-//     // Fallback to interactive method if needed
-// });
-
-// async function initializeMsal() {
-//     await pca.initialize();
-// }
-
-// initializeMsal().then(() => {
-//     // Now you can safely call other MSAL APIs
-// });
-
-// ReactDOM.createRoot(document.getElementById('root')!).render(
-//     <React.StrictMode>
-//         <MsalProvider instance={pca}><RouterProvider router={router} /></MsalProvider>
-//     </React.StrictMode>,
-// )

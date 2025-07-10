@@ -21,7 +21,7 @@ import AttachesTool from "@editorjs/attaches";
 import ImageTool from "@editorjs/image";
 import { EditorNotesData } from "../DataModels/HelperModels";
 import { deleteEditorNotesFile, uploadEditorNotesFiles } from "../BizLogicUtilities/FetchData";
-import { useSpiderStore } from "../DataModels/ZuStore";
+import { useCStore } from "../DataModels/ZuStore";
 import { UIMessageType } from "../DataModels/Constants";
 
 
@@ -35,8 +35,8 @@ class CustomImageTool extends ImageTool {
         //@ts-ignore
         let imageURL = this._data?.file?.url;
         if (imageURL && imageURL.length > 0) {
-            let store = useSpiderStore.getState();
-            let projId = store.basicProjInfo?.id || ''
+            let store = useCStore.getState();
+            let projId = store.currentAppInfo?._id || ''
             deleteEditorNotesFile(projId, imageURL).then((res: boolean) => {
                 if (res) {
                     store.displayQuickMessage(UIMessageType.SUCCESS_MSG, "Image deletion completed...")
@@ -72,13 +72,13 @@ const EDITOR_JS_TOOLS = {
         config: {
             uploader: {
                 uploadByFile(file: any) {
-                    let store = useSpiderStore.getState();
-                    let projId = store.basicProjInfo?.id || ''
+                    let store = useCStore.getState();
+                    let projId = store.currentAppInfo?._id || ''
                     return uploadEditorNotesFiles(file, projId)
                 },
                 uploadByUrl(url: string) {
-                    let store = useSpiderStore.getState();
-                    let projId = store.basicProjInfo?.id || ''
+                    let store = useCStore.getState();
+                    let projId = store.currentAppInfo?._id || ''
                     console.log(url);
                     // return uploadEditorNotesFiles(file, projId)
 
@@ -103,8 +103,8 @@ const EDITOR_JS_TOOLS = {
         config: {
             uploader: {
                 uploadByFile(file: any) {
-                    let store = useSpiderStore.getState();
-                    let projId = store.basicProjInfo?.id || ''
+                    let store = useCStore.getState();
+                    let projId = store.currentAppInfo?._id || ''
                     return uploadEditorNotesFiles(file, projId)
                 }
             }

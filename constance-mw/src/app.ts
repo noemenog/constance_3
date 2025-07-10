@@ -4,12 +4,14 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from 'compression';
 import * as dbConn from './dbConn'
-import { app_v1 } from "./Routers/V1/__index";
-import { app_v2 } from "./Routers/V2";
+import { app_v2 } from "./Routers/V2/__index";
+import { app_v3 } from "./Routers/V3/__index";
 import fs from 'fs'
 import path from "path"
 import { processRouteIntercept } from "./BizLogic/BasicCommonLogic";
-import { getGenConfigs } from "./BizLogic/ConfigLogic";
+import { ConfigItem } from "./Models/ServiceModels";
+import { ConstanceRepo } from "./Repository/ConstanceRepo";
+import { AppConfigConstants } from "./Models/Constants";
 
 
 
@@ -30,8 +32,9 @@ app.use(helmet());
 
 
 //apply CORS policy
-let genConfigs = await getGenConfigs(null, null, true);
-let originConf = genConfigs?.find(x => x.configName.toLowerCase() === "allowed_origins")?.configValue;
+let constanceRepo = new ConstanceRepo();
+let genConfigs: ConfigItem[] = await constanceRepo.getConfigs(AppConfigConstants.BUCKETID__MAIN_GENERAL_CONFIG) ?? [];
+let originConf = genConfigs?.find(x => (x.name && x.name.toLowerCase() === "allowed_origins"))?.value;
 let allowList : string[] = originConf?.allowedOrigins ?? [];
 let allowUndefOrigin = originConf?.allowUndefinedOrigin?.toString().toLowerCase().trim() ?? "true";
 if(allowList && allowList.length > 0){
@@ -74,12 +77,12 @@ app.use(async (req, res, next) => {
 
 
 //handle root route
-app.get('/', (req, res) => { res.status(200).send('Hello Spider!'); });
+app.get('/', (req, res) => { res.status(200).send('Hello & Welcome!'); });
 
 
 // versioning
-app.use('/api/v1', app_v1);
 app.use('/api/v2', app_v2);
+app.use('/api/v3', app_v3);
 
 
 // handle mongo indexes

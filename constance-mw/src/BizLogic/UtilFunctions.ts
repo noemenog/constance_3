@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { ServiceModel } from "../Models/ServiceModels";
-import { ConfigItem, PropertyItem, QuickStatus } from "../Models/HelperModels";
-import { CommonPropertyCategoryEnum, NamingContentTypeEnum } from "../Models/Constants";
+import { PropertyItem, QuickStatus } from "../Models/HelperModels";
+import { NamingContentTypeEnum } from "../Models/Constants";
 import { ObjectId } from "mongodb";
 import https from 'https';
 import rfdc from "rfdc";
@@ -136,7 +136,6 @@ export function isServiceModel(obj: any): obj is ServiceModel {
         && obj._id !== null
         && obj._id !== undefined
         && typeof obj.projectId === 'string'
-        && typeof obj.snapshotSourceId === 'string'
         && Array.isArray(obj.contextProperties)
         && isValidDate(obj?.lastUpdatedOn?.toString())
     );
@@ -193,20 +192,20 @@ function removeSubstringFromEnd(str: string, removalSubstring: string, caseInsen
 }
 
 
-export function copyForSnapshot<T extends ServiceModel>(items: T[], newProjectId: string, setIdForSnapShot: boolean) : Array<T> {
-    let returnItems : Array<T> = [];
-    let copies = rfdcCopy<T>(items) as T[] 
-    for(let i = 0; i < items.length; i++) {
-        let itemId =  copies[i]._id?.toString();
-        copies[i].snapshotSourceId = (setIdForSnapShot && itemId) ? itemId : '';
-        copies[i].projectId = newProjectId || '';
-        delete copies[i]['_id'];
+// export function copyForSnapshot<T extends ServiceModel>(items: T[], newProjectId: string, setIdForSnapShot: boolean) : Array<T> {
+//     let returnItems : Array<T> = [];
+//     let copies = rfdcCopy<T>(items) as T[] 
+//     for(let i = 0; i < items.length; i++) {
+//         let itemId =  copies[i]._id?.toString();
+//         copies[i].snapshotSourceId = (setIdForSnapShot && itemId) ? itemId : '';
+//         copies[i].ownerElementId = newProjectId || '';
+//         delete copies[i]['_id'];
 
-        returnItems.push(copies[i])
-    }
+//         returnItems.push(copies[i])
+//     }
 
-    return returnItems;
-}
+//     return returnItems;
+// }
 
 export function rfdcCopy<T>(item: T|T[]) : T|T[] {
     const clone = rfdc({
@@ -264,6 +263,22 @@ export function getEnumValuesAsArray(enumType: any, allUpperCase: boolean = fals
     
     let cautiouslyRemoveDuplicatesIfAny = new Set((values as string[]) ?? [])
     return Array.from(cautiouslyRemoveDuplicatesIfAny)
+}
+
+
+
+export function getEnumValuesAsMap(enumType: any, upperCaseKeysInsteadOfLowerCase: boolean = false): Map<string, string> {
+    const map: Map<string, string> = new Map();
+    getEnumValuesAsArray(enumType).forEach(item => {
+        if(upperCaseKeysInsteadOfLowerCase) {
+            map.set(item.toUpperCase(), item);
+        }
+        else {
+            map.set(item.toLowerCase(), item);
+        }
+    });
+
+    return map
 }
 
 
@@ -363,11 +378,7 @@ export function checkDuplicatesIgnoreCase(values: string[]): boolean {
 
 
 export function verifyNaming(names: string[], contentType: NamingContentTypeEnum) {   
-    //this check should apply to: 
-    //      project name, rule area, layer group, layer group set, physical cset, clearance cset, match group, clearance rule
-    //      snapshot name, default constraint dataset name, netclass name, interface name, snapshot name, defcon clone name, configured property names
-    
-    //set defaults
+    ///set defaults
     let mainRegex = /^[A-Za-z0-9][A-Za-z0-9_-]*[A-Za-z0-9]$/
     let firstOthRegex = /.*[a-zA-Z0-9].*/i;
     let secondOthRegex = /[\(\)\[\]]{2,}/;
@@ -376,26 +387,11 @@ export function verifyNaming(names: string[], contentType: NamingContentTypeEnum
     let maxLength = 35
 
     //handle special cases
-    if(contentType === NamingContentTypeEnum.PROJECT) {
+    if(contentType === NamingContentTypeEnum.APPINFO) {
         maxLength = 28
     }
-    else if(contentType === NamingContentTypeEnum.RULE_AREA) {
-        mainRegex = /^[A-Za-z0-9\(\[][A-Za-z0-9_\-]*[A-Za-z0-9\)\]]$/
-    }
-    else if(contentType === NamingContentTypeEnum.NET) {
-        mainRegex = /^[A-Za-z0-9\[][A-Za-z0-9_\-\[\]]*[A-Za-z0-9\]]$/
-    }
-    else if(contentType === NamingContentTypeEnum.PROJECT_PROPERTY) {
-        maxLength = 45
-    }
-    // else if (contentType === NamingContentTypeEnum.RELATION){
-    //     maxLength= 32 
-    // }
-    else if (contentType === NamingContentTypeEnum.ARBITRARY_DEFAULT) {
+    else if (contentType === NamingContentTypeEnum.ARBITRARY_DEFAULT){
         maxLength= 36 
-    }
-    else if (contentType === NamingContentTypeEnum.INTERFACE_TEMPLATE) {
-        maxLength= 45 
     }
 
     //run tests
@@ -497,55 +493,6 @@ export function errorFunction(err: any, skipConsoleLog = false): any {
 }
 
 
-export function getPropertiesFromConfigs(incomingConfigs: ConfigItem[], configItemName: string, setCateg: boolean): PropertyItem[] {
-    let propArr: PropertyItem[] = []
-    let namesToCheck = []
-
-    if(incomingConfigs && incomingConfigs.length > 0) {
-        let propConf : any = incomingConfigs.filter(a => a.configName.toLowerCase() === configItemName.toLowerCase())?.at(0)?.configValue ?? null
-        
-        if(propConf && propConf.length > 0) {
-            
-            for(let x = 0; x < propConf.length; x++) {
-                let propInstance = (propConf[x] as PropertyItem);
-                
-                let name = propInstance?.name?.trim() ?? ""
-                let value = propInstance?.value ?? ""
-                let enabled = propInstance?.enabled ?? false
-                let editable = propInstance?.editable ?? false
-                let displayName = propInstance?.displayName?.trim() ?? name  //use 'name' if 'displayName' is not specified
-                let contextProps = propInstance.contextProperties ?? []
-
-                if(propInstance && name.length > 0 && enabled === true) {
-                    namesToCheck.push(name);
-                    
-                    propInstance.id = crypto.randomUUID()
-                    propInstance.displayName = displayName;
-                    
-                    if(setCateg === true) {
-                        if(editable){
-                            propInstance.category = CommonPropertyCategoryEnum.GENERAL_CONFIGURED_FIXED_KEY
-                        }
-                        else {
-                            propInstance.category = CommonPropertyCategoryEnum.GENERAL_CONFIGURED_NON_EDITABLE
-                        }
-                    }
-                    propInstance.value = value.toString() //allowing only string values from config
-                    propArr.push(propInstance)
-                }
-            }
-
-        }
-    }
-
-    if(namesToCheck.length > 0) {
-        verifyNaming(namesToCheck, NamingContentTypeEnum.PROJECT_PROPERTY)
-    }
-
-    return propArr;
-}
-
-
 
 export const getDateStringForExport = (): string => {
     let date = new Date();
@@ -564,447 +511,4 @@ export const getDateStringForExport = (): string => {
 
 
 
-
-
-
-
-//intended use:
-        //  get-nets:                  filterNetName
-        //  get-constraints:          filterElementName
-        //  get-class-relation-layout: netclassName
-        
-
-
-
-    
-// let newStr = str;
-// if(caseInsensitive) {
-//     const regex = new RegExp(`^${removalSubstring}`, 'i'); // 'i' flag makes it case-insensitive
-//     newStr = str.replace(regex, '');
-// }
-// else {
-//     if (str.startsWith(removalSubstring)) {
-//         newStr = str.slice(removalSubstring.length);
-//     }
-// }
-
-// return newStr;
-
-
-//============================================================================
-
-
-
-
-// sample test: jupiter_mountain
-
-// starts with 
-// jupiter_
-
-// ends With
-// *_mountain
-
-// contains
-// *mount*
-
-// not contains
-// <>*mount*
-
-
-// equals
-// =jupiter_mountain
-
-// not equals
-// !=jupiter_rising
-// <>jupiter_rising
-
-//=========================================================================
-
-
-
-// async function mergeChunks(fileName: string, totalChunks: number, chunkDir: string) : Promise<Buffer> {
-//     // if (!fs.existsSync(mergedFilePath)) {
-//     //     fs.mkdirSync(mergedFilePath);
-//     // }
-    
-//     //======================
-//     let buffer : Buffer = Buffer.from('');
-//     let bufs = []
-//     for (let i = 0; i < totalChunks; i++) {
-//         const chunkFilePath = `${chunkDir}/${fileName}.part_${i}`;
-//         const chunkBuffer = await fs.promises.readFile(chunkFilePath);
-//         bufs.push(chunkBuffer);
-//         // Delete the individual chunk file after merging
-//     }
-//     buffer = Buffer.concat(bufs);
-//     return buffer;
-
-//     //=======================
-//     // const writeStream = fs.createWriteStream(`${mergedFilePath}/${fileName}`);
-//     // for (let i = 0; i < totalChunks; i++) {
-//     //     const chunkFilePath = `${chunkDir}/${fileName}.part_${i}`;
-//     //     const chunkBuffer = await fs.promises.readFile(chunkFilePath);
-//     //     writeStream.write(chunkBuffer);
-//     //     fs.unlinkSync(chunkFilePath); // Delete the individual chunk file after merging
-//     // }
-  
-//     // writeStream.end();
-//     // console.log("Chunks merged successfully");
-// }
-
-//=============================================================================
-
-
-
-    // let newItems : Array<T> = [];
-    // if(items && items.length > 0){
-    //     for(let i = 0; i < items.length; i++) {
-    //         let oldItem : T = items[i];
-    //         let copy : T = {...oldItem};
-    //         copy.snapshotSourceId = (setIdForSnapShot && oldItem._id) ? oldItem._id.toString() : '';
-    //         copy.projectId = newProjectId ?? '';
-    //         delete copy['_id'];
-            
-    //         newItems.push(copy)
-    //     }
-    // }
-
-
-// export function deepCopy<T>(item: T|T[]) : T|T[] {
-//     const str = JSON.stringify(item)
-//     const copy = JSON.parse(str) as typeof item;
-//     return copy;
-// }
-
-
-
-
-
-// allowSpace: boolean, elementName: string|null, maxLength: number
-
-
-
-
-// function containsSpecialChars(inputStrings: string[]) {
-//     for(let i = 0; i < inputStrings.length; i++){
-//         const charsExpression = /[`!@#$%^&*()+=\[\]{};':"\\|,<>\/?~]/;
-//         let val = charsExpression.test(inputStrings[i]);
-//         if (val === true) { return true; }
-//     }
-//     return false;
-// }
-
-
-
-
-
-// export function verifyNaming(names: string[], regexPattern: string, maxLength: number, errMsgToUse: string = '') {
-
-//     //this check should apply to: 
-//     /*
-//         project name 
-//         rule area
-//         layer group
-//         layer group set
-//         physical cset
-//         clearance cset
-//         match group
-//         clearance rule
-//         snapshot name
-//         default constraint dataset name
-//         netclass name
-//         interface name
-//         snapshot name
-//         defcon clone name
-//         configured property names
-//     */
-
-//     // try {
-//         // let namingConf : {regexPattern: string, maxLength: number}| null = null;
-//         // if(inputNamingConf && inputNamingConf.regexPattern && inputNamingConf.regexPattern.trim().length > 0) {
-//         //     namingConf = inputNamingConf
-//         // }
-//         // else {
-//         //     let genConfigs : ConfigItem[] = await getGenConfigs(null, null, true);
-//         //     namingConf = genConfigs.find(a => a.configName === AppConfigConstants.CONFIGITEM__Name_Check_Settings)?.configValue ?? undefined
-//         //     if(!namingConf || !namingConf.regexPattern) {
-//         //         throw new Error(`Could not find value for config item: '${AppConfigConstants.CONFIGITEM__Name_Check_Settings}'. Check config management system`)
-//         //     }
-//         // }
-        
-
-
-//         for(let input of names) {
-//             const regex = new RegExp(namingConf.regexPattern);
-//             let testResult = regex.test(input);
-            
-//             if(input.trim().length === 0) {
-//                 throw new Error(`Invalid data provided. Please specify valid non-empty string(s).`)
-//             }
-//             if(namingConf.maxLength && namingConf.maxLength < input.length) {
-//                 throw new Error(`Invalid data provided. Value exceeded the max number of characters allowed: ${namingConf.maxLength || ''}`)
-//             }
-//             if(testResult === false) {
-//                 if(errMsgToUse && errMsgToUse.trim().length > 0) {
-//                     throw new Error(errMsgToUse);
-//                 }
-//                 else {
-//                     throw new Error(`Value specified do not meet proper naming standards. Please verify the information before submitting`)
-//                 }
-//             } 
-//         }
-//     // }
-//     // catch(error: any) {
-//     //     throw new Error(`Error: ${error.message}`)
-//     // }
-// }
-
-
-
-// export function getFilterForApp(app: string, enabledOnly: boolean, isAppId: boolean = false){
-//     if(enabledOnly){
-//         let enableOnlyExpr = {}
-//         if(isAppId) {
-//             enableOnlyExpr = { 
-//                 _id: new mongo.ObjectId(app),
-//                 enabled : true 
-//             };
-//         }
-//         else {
-//             enableOnlyExpr = { 
-//                 appName : new RegExp('^' + app + '$', 'i'), 
-//                 enabled : true 
-//             };
-//         }
-//         return enableOnlyExpr;
-//     }
-//     else {
-//         let expr = {}
-//         if(isAppId) {
-//             expr = { _id: new mongo.ObjectId(app) };
-//         }
-//         else {
-//             expr = { appName : new RegExp('^' + app + '$', 'i') };
-//         }
-//         return expr;
-//     }
-// }
-
-
-// export function getFilterForBucket(appId: string, bucketId: string|null|undefined) {
-//     if(appId && appId.length > 0) {
-//         if(bucketId && bucketId.length > 0){
-//             let expr1 = { 
-//                 appId: new RegExp('^' + appId + '$', 'i'), 
-//                 bucketId: new RegExp('^' + bucketId + '$', 'i')
-//             };
-//             return expr1;
-//         }
-//         else{
-//             let expr3 = { 
-//                 appId: new RegExp('^' + appId + '$', 'i')
-//             };
-//             return expr3;
-//         }
-//     }
-//     else{
-//         throw new Error(`Input appId cannot be null or empty`);
-//     }
-// }
-
-
-// export function containsSpecialChars(inputStrings: string[]) {
-//     for(let i = 0; i < inputStrings.length; i++){
-//         const charsExpression = /[`!@#$%^&*()+=\[\]{};':"\\|,<>\/?~]/;
-//         let val = charsExpression.test(inputStrings[i]);
-//         if (val === true) { return true; }
-//     }
-//     return false;
-// }
-
-
-// export async function validateConfigListForAddOrUpdate(env: string, inputConfigs: ConfigItem[], isAdd :boolean) {
-//     let oper = isAdd ? "add" : "update";
-    
-//     let appIdSet = new Set(inputConfigs.map(a => a.appId));
-//     if(appIdSet.size !== 1){
-//         throw new Error(`Cannot ${oper} batch of config items from different apps. This feature is not supported`);
-//     }
-    
-//     let bucketIdSet = new Set(inputConfigs.map(a => a.bucketId));
-//     if(bucketIdSet.size !== 1){
-//         throw new Error(`Cannot ${oper} batch of config items from different buckets. This feature is not supported`);
-//     }
-
-//     const [appId] = appIdSet; //get first item in set
-//     const [bucketId] = bucketIdSet;  //get first item in set
-
-//     const appsCollection = getAppInfoCollection(env);
-//     const confCollection = getConfigCollection(env);
-//     const bucketCollection = getBucketCollection(env);
-    
-//     let appItems : AppInfo[] = (await appsCollection.find({ _id: new mongo.ObjectId(appId) } as any).toArray()) as AppInfo[];
-//     let bucks : Bucket[] = (await bucketCollection.find({ _id: new mongo.ObjectId(bucketId) } as any).toArray()) as Bucket[];
-
-//     if (appItems && appItems.length > 0) {
-//         if(bucks && bucks.length > 0) {
-//             for(let i = 0; i < inputConfigs.length; i++) {
-//                 let confItem = inputConfigs[i]
-
-//                 // Ensure the necessary properties are filled in the config item
-//                 if(!confItem.appId || !confItem.configName || !confItem.bucketId || !confItem.lastUpdatedOn){
-//                     throw new Error(`Cannot ${oper} one or more config items. All required fields must have valid values.`);
-//                 }
-        
-//                 // Check if app name has special/unwanted characters
-//                 if(containsSpecialChars([confItem.configName])){
-//                     throw Error("ConfigItem name contains special characters that are not allowed.");
-//                 }
-        
-//                 // Ensure that ConfigValue is actually the specified ConfigType.
-//                 let valueTypeValResult = validateConfigValueAndType(confItem.configValue, confItem.contentType)
-//                 if(valueTypeValResult === false){
-//                     throw new Error(`The value for ConfigItem '${confItem.configName}' is not actually of the type ${confItem.contentType}'`);
-//                 }
-        
-//                 // Ensure config app is as expected
-//                 if(confItem.appId !== appItems[0]._id?.toString()){
-//                     throw Error("ConfigItem's appId is not what is expected.");
-//                 }
-
-//                 // Ensure config bucket is as expected
-//                 if(confItem.bucketId !== bucks[0]._id?.toString()){
-//                     throw Error("ConfigItem's bucketId is not what is expected.");
-//                 }
-
-//                 // Ensure bucket has same appId as the config item
-//                 if(bucks[0].appId !== appItems[0]._id?.toString()){
-//                     throw Error("AppId for configItem is not same as the appId for the configItem's assigned bucket.");
-//                 }
-//             };
-
-//             // Ensure no duplicate configItem name
-//             let buckFilter = getFilterForBucket(appId, bucketId)
-//             let existingConfigs = (await confCollection.find(buckFilter).toArray() as ConfigItem[]);
-//             if(isAdd) {
-//                 let existingNames = existingConfigs.map((x: ConfigItem) => x.configName)
-//                 let newNames = inputConfigs.map((x: ConfigItem) => x.configName)
-//                 let combinedNames = [...existingNames, ...newNames]
-//                 let checkRes = checkDuplicatesIgnoreCase(combinedNames);
-//                 if(checkRes === false) {
-//                     throw Error("Cannot set configs for app because the process would result in duplicate config names.");
-//                 }
-//             }
-//             else {
-//                 let incomingConfigIds = inputConfigs?.map((a, i) => a._id?.toString()) ?? [];
-//                 let uniqueExisting = existingConfigs.filter(x => (incomingConfigIds.includes(x._id?.toString()) === false))
-//                 let newNames = inputConfigs.map((x: ConfigItem) => x.configName)
-//                 let existingNames = uniqueExisting.map((x: ConfigItem) => x.configName)
-//                 let combinedNames = [...existingNames, ...newNames]
-//                 let checkRes = checkDuplicatesIgnoreCase(combinedNames);
-//                 if(checkRes === false) {
-//                     throw Error("Cannot set configs for app because the process would result in duplicate config names.");
-//                 }
-//             }
-//         }
-//         else{
-//             throw new Error(`Cannot ${oper} config items. Bucket for config items(s) was not found.`);
-//         }
-//     }
-//     else {
-//         throw new Error(`Cannot ${oper} config items. App specified for config items(s) was not found.`);
-//     }
-
-// }
-
-
-// export function validateConfigValueAndType(value: any, valueType: ConfigContentTypeEnum) : boolean {
-//     if (ConfigContentTypeEnum.JSON === valueType.toUpperCase()) {
-//         try {
-//             if(typeof value == "string") {
-//                 return (value && value.length > 0 && JSON.parse(value)) ? true : false
-//             }
-//             else if(typeof value == "object") {
-//                 return (value && JSON.parse(JSON.stringify(value))) ? true : false
-//             }
-//             else {
-//                 throw new Error();
-//             }
-//         } 
-//         catch (e) {
-//             return false;
-//         }
-//     } 
-//     else if (ConfigContentTypeEnum.BOOLEAN === valueType.toUpperCase()) {
-//         if (value.toString().toLowerCase() === "true" || value.toString().toLowerCase() === "false") {
-//             return true;
-//         } 
-//         else {
-//             return false;
-//         }
-//     } 
-//     else if (ConfigContentTypeEnum.NUMBER === valueType.toUpperCase()) {
-//         return /^-?\d+$/.test(value.toString());
-//     } 
-//     else if (ConfigContentTypeEnum.STRING === valueType.toUpperCase()) {
-//         if ((typeof value === "string") && (value.length > 0)){
-//             return true;
-//         } 
-//         else {
-//             return false;
-//         }
-//     } 
-//     else if (ConfigContentTypeEnum.XML === valueType.toUpperCase()) {
-//         try {
-//             //libxml.parseXml(value);
-//             return true;
-//         } 
-//         catch (e) {
-//             return false;
-//         }
-//     } 
-//     else {
-//         return false;
-//     }
-// }
-
-
-// export function formatConfigValueAndBucketName(configs: ConfigItem[], bucket: Bucket, strUploadScenario : boolean = false) : ConfigItem[]{
-//     for (let i = 0; i < configs.length; i++) {
-//         let val = configs[i].configValue;
-//         if (configs[i].contentType === ConfigContentTypeEnum.BOOLEAN) {
-//             configs[i].configValue = val.toString().toLowerCase() == "true" ? true : false;
-//         }
-//         else if (configs[i].contentType === ConfigContentTypeEnum.NUMBER) {
-//             configs[i].configValue = Number(val);
-//         }
-//         else if (configs[i].contentType === ConfigContentTypeEnum.JSON) {
-//             if(strUploadScenario){
-//                 configs[i].configValue = JSON.parse(val) ;
-//             }
-//             else {
-//                 configs[i].configValue = JSON.parse(JSON.stringify(val)) ;
-//             }
-//         }
-//         else if (configs[i].contentType === ConfigContentTypeEnum.STRING) {
-//             configs[i].configValue = String(val);
-//         }
-
-//         configs[i].bucketName = bucket.name;
-//     }
-
-//     return configs
-// }
-
-
-// export function checkDuplicatesIgnoreCase(values: string[]): boolean {
-//     if(values && values.length > 0) {
-//         const lowercaseNames = values.map(word => word.toLowerCase()) ?? [];
-//         let dist = new Set(lowercaseNames).size;
-//         if (dist !== values.length) {
-//             return false;
-//         }
-//     }
-//     return true;
-// }
 

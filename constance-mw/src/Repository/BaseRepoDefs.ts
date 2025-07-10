@@ -21,18 +21,18 @@ export interface IBaseRepository<T extends Document>
 
 export interface IBaseServiceModelRepo<T extends ServiceModel> extends IBaseRepository<T>
 {
-    GetAnyOne(projectId: string, filter: Filter<T>|null): Promise<T|null>;
-    GetOneByProjectID(projectId: string, filter?: Filter<T>) : Promise<T>;
-    GetOneByProjectIDAndItemID(projectId: string, itemId: string) : Promise<T>;
-    GetAllByProjectID(projectId: string, filter?: Filter<T>) : Promise<T[]>;
-    GetAllByProjectIDAndProjection(projectId: string, filter: Filter<T>, projectionSpec: Document) : Promise<any[]>;
-    ReplaceManyOrInsert(projectId: string, replacements: T[]): Promise<T[]>;
-    DeleteManyByProjectId(projectId: string, filters: Array<Filter<T>>|null, ignoreZeroDeletedCount : boolean) : Promise<boolean>;
-    GetSnapshotDataInList(projectId: string, snapshotComponentIdList: string[]): Promise<T[]>;
-    GetCountByProjectId(projectId: string, filters: Array<Filter<T>>|null): Promise<number>;
-    GetCursorByProjectIDAndProjection(projectId: string, filters: Array<Filter<T>>|null, projectionSpec: Document|null, batchSize: number): FindCursor<WithId<T>>;
-    PaginationGetLastByProjectIDAndProjection(projectId: string, filters: Array<Filter<T>>|null, limit: number, projectionSpec: Document|null) : Promise<T[]>;
-    PaginationGetPageByProjectIDAndProjection(projectId: string, filters: Array<Filter<T>>|null, exclusionaryLastId: string, limit: number, projectionSpec: Document|null) : Promise<T[]>;
-    BulkFindAndPushToArrayField(projectId: string, filters: Array<Filter<T>>|null, fieldSelector: (obj: T) => any, pushValues: Array<any>, ignoreZeroUpdateCount: boolean): Promise<boolean>;
-    BulkUpdateWithMap(projectId: string, updateData: Map<string, Map<string, string>>) : Promise<boolean>;   
+    GetAnyOne(ownerElementId: string, filter: Filter<T>|null): Promise<T|null>;
+    GetOneByOwnerElementId(ownerElementId: string, filter?: Filter<T>) : Promise<T>;
+    GetOneByOwnerElementIdAndItemID(ownerElementId: string, itemId: string) : Promise<T>;
+    GetAllByOwnerElementId(ownerElementId: string, filter?: Filter<T>) : Promise<T[]>;
+    GetAllByOwnerElementIdAndProjection(ownerElementId: string, filter: Filter<T>, projectionSpec: Document) : Promise<any[]>;
+    ReplaceManyOrInsert(ownerElementId: string, replacements: T[]): Promise<T[]>;
+    DeleteManyByOwnerElementId(ownerElementId: string, filters: Array<Filter<T>>|null, ignoreZeroDeletedCount : boolean) : Promise<boolean>;
+    GetSnapshotDataInList(ownerElementId: string, snapshotComponentIdList: string[]): Promise<T[]>;
+    GetCountByOwnerElementId(ownerElementId: string, filters: Array<Filter<T>>|null): Promise<number>;
+    GetCursorByOwnerElementIdAndProjection(ownerElementId: string, filters: Array<Filter<T>>|null, projectionSpec: Document|null, batchSize: number): FindCursor<WithId<T>>;
+    PaginationGetLastByOwnerElementIdAndProjection(ownerElementId: string, filters: Array<Filter<T>>|null, limit: number, projectionSpec: Document|null) : Promise<T[]>;
+    PaginationGetPageByOwnerElementIdAndProjection(ownerElementId: string, filters: Array<Filter<T>>|null, exclusionaryLastId: string, limit: number, projectionSpec: Document|null) : Promise<T[]>;
+    BulkFindAndPushToArrayField(ownerElementId: string, filters: Array<Filter<T>>|null, fieldSelector: (obj: T) => any, pushValues: Array<any>, ignoreZeroUpdateCount: boolean): Promise<boolean>;
+    BulkUpdateWithMap(ownerElementId: string, updateData: Map<string, Map<string, string>>) : Promise<boolean>;   
 }

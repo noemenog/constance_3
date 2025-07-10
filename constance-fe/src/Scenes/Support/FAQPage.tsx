@@ -4,7 +4,7 @@ import { useLoaderData, useLocation } from "react-router-dom";
 import { mapKeys } from "lodash";
 import { ArrowRight } from "@mui/icons-material";
 import { Box } from "@mui/material";
-import { useSpiderStore } from "../../DataModels/ZuStore";
+import { useCStore } from "../../DataModels/ZuStore";
 
 
 
@@ -17,7 +17,7 @@ interface FAQPageProps {
 
 const FAQPage: React.FC<FAQPageProps> = ({  }) => {
 
-    const placePageTitle = useSpiderStore((state) => state.placePageTitle);
+    const placePageTitle = useCStore((state) => state.placePageTitle);
 
     useEffect(() => {
         placePageTitle("Faqs")

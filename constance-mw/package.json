@@ -1,6 +1,6 @@
 {
-  "name": "constancemw",
-  "version": "3.1.12",
+  "name": "constance-mw",
+  "version": "3.0.0",
   "private": true,
   "description": "",
   "main": "src/app.ts",

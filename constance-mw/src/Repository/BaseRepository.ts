@@ -8,16 +8,8 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T>
 {
     protected collection : Collection<T>;
     
-    constructor(collection: DBCollectionTypeEnum, fromSnapShot?: boolean) {
-        if(fromSnapShot === true || collection === DBCollectionTypeEnum.CHANGE_CONTEXT_COLLECTION) {
-            this.collection = getCollection(collection, DatabaseConnectionTypeEnum.SNAPSHOT_DB)
-        }
-        else if(collection === DBCollectionTypeEnum.NET_COLLECTION) {
-            this.collection = getCollection(collection, DatabaseConnectionTypeEnum.NETS_DB)
-        }
-        else {
-            this.collection = getCollection(collection, DatabaseConnectionTypeEnum.PRIMARY_DB)
-        }
+    constructor(collection: DBCollectionTypeEnum, env: string) {
+        this.collection = getCollection(env, collection)
     }
 
     async GetWithId(id: string): Promise<T> {

@@ -9,15 +9,15 @@ import { DBCollectionTypeEnum } from "../Models/Constants";
 
 export class ServiceModelRepository<T extends ServiceModel> extends BaseRepository<T> implements IServiceModelRepository<T> {
 
-    constructor(collection: DBCollectionTypeEnum, fromSnapShot?: boolean) {
-        super(collection, fromSnapShot)
+    constructor(collection: DBCollectionTypeEnum, env: string) {
+        super(collection, env)
     }
 
 
-    async GetAnyOne(projectId: string, filter: Filter<T>|null): Promise<T|null> { 
+    async GetAnyOne(ownerElementId: string, filter: Filter<T>|null): Promise<T|null> { 
         let finalFilter = (filter)
-            ? { $and: [{ projectId: projectId }, filter] }
-            : { projectId: projectId }
+            ? { $and: [{ ownerElementId: ownerElementId }, filter] }
+            : { ownerElementId: ownerElementId }
 
         const result = await this.collection.findOne(finalFilter as any);
         
@@ -30,33 +30,33 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
         
     }
 
-    async GetOneByProjectID(projectId: string, filter?: Filter<T>): Promise<T> {
+    async GetOneByOwnerElementId(ownerElementId: string, filter?: Filter<T>): Promise<T> {
         let finalFilter = (filter)
-            ? { $and: [{ projectId: projectId }, filter] }
-            : { projectId: projectId }
+            ? { $and: [{ ownerElementId: ownerElementId }, filter] }
+            : { ownerElementId: ownerElementId }
         const result : T[] = (await this.collection.find(finalFilter as any)?.toArray()) as T[];
         return result[0]
     }
 
-    async GetOneByProjectIDAndItemID(projectId: string, itemId: string) : Promise<T>{
+    async GetOneByOwnerElementIdAndItemID(ownerElementId: string, itemId: string) : Promise<T>{
         let itemIDFilter = { _id: new ObjectId(itemId) } as any;
-        let finalFilter = { $and: [{ projectId: projectId }, itemIDFilter] }
+        let finalFilter = { $and: [{ ownerElementId: ownerElementId }, itemIDFilter] }
         const result : T[] = (await this.collection.find(finalFilter as any)?.toArray()) as T[];
         return result[0]
     }
 
-    async GetAllByProjectID(projectId: string, filter?: Filter<T>): Promise<T[]> {
+    async GetAllByOwnerElementId(ownerElementId: string, filter?: Filter<T>): Promise<T[]> {
         let finalFilter = (filter)
-            ? { $and: [{ projectId: projectId }, filter] }
-            : { projectId: projectId }
+            ? { $and: [{ ownerElementId: ownerElementId }, filter] }
+            : { ownerElementId: ownerElementId }
         const result : T[] = (await this.collection.find(finalFilter as any)?.toArray()) as T[];
         return result ?? []
     }
 
-    async GetAllByProjectIDAndProjection(projectId: string, filter: Filter<T>|null, projectionSpec: Document): Promise<any[]> {
+    async GetAllByOwnerElementIdAndProjection(ownerElementId: string, filter: Filter<T>|null, projectionSpec: Document): Promise<any[]> {
         let finalFilter = (filter)
-            ? { $and: [{ projectId: projectId }, filter] }
-            : { projectId: projectId }
+            ? { $and: [{ ownerElementId: ownerElementId }, filter] }
+            : { ownerElementId: ownerElementId }
         
         if(projectionSpec && hasAnyMembers(projectionSpec)){
             const projResult : T[] = (await this.collection.find(finalFilter as any, {projection: projectionSpec}).toArray()) as T[];
@@ -68,10 +68,10 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
         }
     }
 
-    GetCursorByProjectIDAndProjection(projectId: string, filters: Array<Filter<T>>|null, projectionSpec: Document|null, batchSize: number, sortSpec: Sort|null = null): FindCursor<WithId<T>> {
+    GetCursorByOwnerElementIdAndProjection(ownerElementId: string, filters: Array<Filter<T>>|null, projectionSpec: Document|null, batchSize: number, sortSpec: Sort|null = null): FindCursor<WithId<T>> {
         let finalFilter = (filters && filters.length > 0)
-            ? { $and: [{ projectId: projectId }, ...filters] }
-            : { projectId: projectId }
+            ? { $and: [{ ownerElementId: ownerElementId }, ...filters] }
+            : { ownerElementId: ownerElementId }
         
         let options = {}
         if(projectionSpec){
@@ -89,7 +89,7 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
         return finalResult;
     }
 
-    async PaginationGetLastByProjectIDAndProjection(projectId: string, filters: Array<Filter<T>>|null, limit: number, projectionSpec: Document|null, sortSpec: Sort = { _id: 1 } as any) : Promise<T[]> {
+    async PaginationGetLastByOwnerElementIdAndProjection(ownerElementId: string, filters: Array<Filter<T>>|null, limit: number, projectionSpec: Document|null, sortSpec: Sort = { _id: 1 } as any) : Promise<T[]> {
         let result = new Array<T>()
         if (limit === 0){
             result = new Array<T>()
@@ -97,15 +97,15 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
         else {
             let options = (projectionSpec) ? { projection: projectionSpec } as FindOptions<T> : undefined
             let finalFilter = (filters && filters.length > 0)
-                ? { $and: [ { projectId: projectId }, ...filters ] }
-                : { projectId: projectId }
+                ? { $and: [ { ownerElementId: ownerElementId }, ...filters ] }
+                : { ownerElementId: ownerElementId }
             result = await this.collection.find(finalFilter as any, options).sort(sortSpec).limit(limit)?.toArray() as T[];
         }
         return result
     }
 
     //WARNING: if youre going to call this, make sure you test your usage. - MIGHT NOT WORK AS INTUITIVELY AS ONE MIGHT EXPECT!!
-    async PaginationGetPageByProjectIDAndProjection(projectId: string, filters: Array<Filter<T>>|null, exclusionaryLastId: string, limit: number, projectionSpec: Document|null, sortSpec: Sort = { _id: 1 } as any) : Promise<T[]> {
+    async PaginationGetPageByOwnerElementIdAndProjection(ownerElementId: string, filters: Array<Filter<T>>|null, exclusionaryLastId: string, limit: number, projectionSpec: Document|null, sortSpec: Sort = { _id: 1 } as any) : Promise<T[]> {
         let result = new Array<T>();
         if(limit === 0 || (!exclusionaryLastId) || exclusionaryLastId.length === 0 || exclusionaryLastId === "undefined"){
             result = new Array<T>() 
@@ -114,36 +114,36 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
             let options = (projectionSpec) ? { projection: projectionSpec } as FindOptions<T> : undefined
             let oid = new ObjectId(exclusionaryLastId)
             let finalFilter = (filters && filters.length > 0)
-                ? { $and: [ { projectId: projectId }, { _id: { $gt: oid } }, ...filters ] }
-                : { $and: [ { projectId: projectId }, { _id: { $gt: oid } } ] }
+                ? { $and: [ { ownerElementId: ownerElementId }, { _id: { $gt: oid } }, ...filters ] }
+                : { $and: [ { ownerElementId: ownerElementId }, { _id: { $gt: oid } } ] }
 
             result = await this.collection.find(finalFilter as any, options).sort(sortSpec).limit(limit)?.toArray() as T[];
         }
         return result
     }
 
-    async ReplaceManyOrInsert(projectId: string, replacements: T[]): Promise<T[]> {
+    async ReplaceManyOrInsert(ownerElementId: string, replacements: T[]): Promise<T[]> {
          //bulk update based on project ID
          const bulkData = replacements.map(item => ( {
             replaceOne: {
                 upsert: true, //upsert is allowed!
-                filter: { projectId: projectId } as any,
+                filter: { ownerElementId: ownerElementId } as any,
                 replacement: item
             }
         }));
         let result = await this.collection.bulkWrite(bulkData);
         let isSuccessful : boolean = result.isOk() && (result.modifiedCount == replacements.length);
         if(isSuccessful){
-            const result : T[] = (await this.collection.find({ projectId: projectId } as any)?.toArray()) as T[];
+            const result : T[] = (await this.collection.find({ ownerElementId: ownerElementId } as any)?.toArray()) as T[];
             return result
         }
         return new Array<T>()
     }
 
-    async DeleteManyByProjectId(projectId: string, filters: Array<Filter<T>>|null, ignoreZeroDeletedCount: boolean): Promise<boolean> {
+    async DeleteManyByOwnerElementId(ownerElementId: string, filters: Array<Filter<T>>|null, ignoreZeroDeletedCount: boolean): Promise<boolean> {
         let finalFilter = (filters && filters.length > 0)
-            ? { $and: [{ projectId: projectId }, ...filters] } as Filter<T>
-            : { projectId: projectId } as Filter<T>
+            ? { $and: [{ ownerElementId: ownerElementId }, ...filters] } as Filter<T>
+            : { ownerElementId: ownerElementId } as Filter<T>
 
         let result = await this.collection.deleteMany(finalFilter)
         if (result && result.deletedCount === 0 && ignoreZeroDeletedCount) {
@@ -157,9 +157,9 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
         }
     }
 
-    async GetSnapshotDataInList(projectId: string, snapshotComponentIdList: string[]): Promise<T[]> {
+    async GetSnapshotDataInList(ownerElementId: string, snapshotComponentIdList: string[]): Promise<T[]> {
         let scObjIdList = snapshotComponentIdList.map((x: string) => new ObjectId(x));
-        let projIdFd = {projectId: projectId} 
+        let projIdFd = {ownerElementId: ownerElementId} 
         let inListFd = { _id: { $in: scObjIdList } as any }
         let combineFd =  { $and: [projIdFd, inListFd] } as any
 
@@ -167,10 +167,10 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
         return results;
     }
 
-    async GetCountByProjectId(projectId: string, filters: Array<Filter<T>>|null): Promise<number> {
+    async GetCountByOwnerElementId(ownerElementId: string, filters: Array<Filter<T>>|null): Promise<number> {
         let finalFilter = (filters && filters.length > 0)
-            ? { $and: [{ projectId: projectId }, ...filters] }
-            : { projectId: projectId }
+            ? { $and: [{ ownerElementId: ownerElementId }, ...filters] }
+            : { ownerElementId: ownerElementId }
         
         const result = await this.collection.countDocuments(finalFilter as any);
         return result
@@ -178,12 +178,12 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
     }
 
     
-    async BulkFindAndPushToArrayField(projectId: string, 
+    async BulkFindAndPushToArrayField(ownerElementId: string, 
         filters: Array<Filter<T>>|null, fieldSelector: (obj: T) => any, pushValues: Array<any>, ignoreZeroUpdateCount: boolean): Promise<boolean> {
         
         let finalFilter = (filters && filters.length > 0)
-        ? { $and: [{ projectId: projectId }, ...filters] } as Filter<T>
-        : { projectId: projectId } as Filter<T>
+        ? { $and: [{ ownerElementId: ownerElementId }, ...filters] } as Filter<T>
+        : { ownerElementId: ownerElementId } as Filter<T>
 
         let fieldName = nameof<T>(fieldSelector);
         let valuesStr : string = JSON.stringify(pushValues)
@@ -197,8 +197,6 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
         }
         const result = await this.collection.updateMany(finalFilter, updateSpecification);
 
-        // return (result.acknowledged && result.modifiedCount > 0);
-
         if (ignoreZeroUpdateCount) {
             return result.acknowledged
         }
@@ -208,13 +206,13 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
 
     }
 
-    async BulkUpdateWithMap<T>(projectId: string, updateDataMap: Map<string, Map<string, string>>, allowUpsert: boolean = false) : Promise<boolean>{
+    async BulkUpdateWithMap<T>(ownerElementId: string, updateDataMap: Map<string, Map<string, string>>, allowUpsert: boolean = false) : Promise<boolean>{
         const bulkOperations: any[] = [];
         updateDataMap.forEach((innerPropMap, itemNameKey) => {
             innerPropMap.forEach((propValue, propName) => {
                 bulkOperations.push({
                     updateOne: {
-                        filter: { projectId: projectId, name: itemNameKey, 'associatedProperties.name': propName },
+                        filter: { ownerElementId: ownerElementId, name: itemNameKey, 'associatedProperties.name': propName },
                         update: { $set: { 'associatedProperties.$.value.customValue': propValue } },
                         upsert: allowUpsert
                     }
@@ -231,47 +229,3 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
     }
 }
     
-
-
-
-
-
-
-
-        // const updates = []
-        // for(const [name, propData] of updateDataMap){
-        //     const itemNameFilter = { 'projectId': projectId, 'name': name };
-        //     const propUpdates = [];
-        //     for(const [propName, propValue] of propData) {
-        //         propUpdates.push({
-        //             updateOne: {
-        //                 filter: {'name': name, 'associatedProperties.name': propName},
-        //                 update: { $set: {'associatedProperties.$.value.customValue': propValue}}
-        //             }
-        //         })
-        //     }
-        //     updates.push({
-        //         updateMany: {
-        //             filter: itemNameFilter,
-        //             update: {$set: {associatedProperties : propUpdates.map(x => x.updateOne.filter)}}
-        //         }
-        //     });
-        // }
-
-        // const result = await this.collection.bulkWrite(updates as any);
-        // return result.isOk()
-
-
-        //==================================================================
-
-
-        // if(projectionSpec){
-        //     let options = { projection: projectionSpec, batchSize: batchSize } as FindOptions<T>
-        //     const projResult : FindCursor<WithId<T>> = this.collection.find(finalFilter as any, options);
-        //     return projResult;
-        // }
-        // else{
-        //     let options = { batchSize: batchSize } as FindOptions<T>
-        //     const fullResult : FindCursor<WithId<T>> = this.collection.find(finalFilter as any, options);
-        //     return fullResult
-        // }

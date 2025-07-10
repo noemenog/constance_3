@@ -69,15 +69,6 @@ body,
 
 
 /* ======================================================================================================*/
-/* GLIDE GRID: -- for dropdown-cell options text in the grid (length matching) */
-/* ======================================================================================================*/
-.gdg-p13nj8j0 {
-  color:#e0e0e0 !important;
-}
-
-
-
-/* ======================================================================================================*/
 /* MGT-REACT:  Login and people picker CSS */
 /* ======================================================================================================*/
 .login {
@@ -233,69 +224,6 @@ fluent-text-field .root{
 }
 
 
-/* ======================================================================================================*/
-/* Dnd Tree for netclass hierarchy */
-/* ======================================================================================================*/
-.nctree-root{
-  overflow-y: none;
-  
-}
-
-.nctree-list-node {
-  list-style-type: none;
-  list-style: none;
-  min-width: 400px;
-}
-
-.nctree-dragging-source{
-  opacity: 0.3;
-}
-
-.nctree-drop-target{
-  background-color: #141b2d;
-}
-
-/*  help from: https://codesandbox.io/p/sandbox/custom-node-ts-6ws8ou?file=%2Fsrc%2FApp.module.css%3A6%2C4&from-embed=  */
-.cn-root {
-  align-items: center;
-  display: grid;
-  grid-template-columns: auto auto 1fr auto;
-  height: 25px;
-  
-  padding-inline-end: 8px;
-}
-
-.cn-expandIconWrapper {
-  align-items: center;
-  font-size: 0;
-  cursor: pointer;
-  display: flex;
-  height: 24px;
-  justify-content: center;
-  width: 24px;
-  transition: transform linear .1s;
-  transform: rotate(0deg);
-}
-
-.cn-expandIconWrapper.cn-isOpen {
-  transform: rotate(90deg);
-}
-
-.cn-labelGridItem {
-  padding-inline-start: 8px;
-}
-
-.cn-labelGridItem:hover {
-  /* colors.primary[600] */
-  background-color: #101624;
-  border-radius: 3px;  
-}
-.cn-hoverBox:hover {
-  /* colors.primary[600] */
-  background-color: #101624;
-  border-radius: 3px;  
-}
-
 
 
 /* ======================================================================================================*/
@@ -308,10 +236,6 @@ fluent-text-field .root{
   width: 60%;
   margin: 50px auto;
 }
-
-/* body {
-  background: #f5f8fa;
-} */
 
 #editorjs-container {
   background-color: #f9f9f9;
@@ -338,26 +262,3 @@ fluent-text-field .root{
   cursor: pointer;
 }
 
-
-
-
-/* ======================================================================================================*/
-/* RoutingRules List Items */
-/* ======================================================================================================*/
-.staggered-list-content {
-  width: "100%";
-  margin: 2rem auto;
-}
-.list {
-  list-style-type: none;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding: 0;
-}
-.list li {
-  width: 100%;
-}
-.list li + li {
-  margin-top: 1rem;
-}

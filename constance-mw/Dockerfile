@@ -26,7 +26,7 @@ RUN npm run build
 EXPOSE 7000
 
 # set node options environment variable
-ENV NODE_OPTIONS="--max-old-space-size=16384"
+ENV NODE_OPTIONS="--max-old-space-size=12000"
 
 # Install nano
 RUN apk add --update nano

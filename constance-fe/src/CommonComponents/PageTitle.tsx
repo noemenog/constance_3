@@ -2,7 +2,7 @@ import { Button, Divider, useTheme } from "@mui/material";
 import { Box, Typography } from "@mui/material";
 import { tokens } from "../theme";
 import { useContext } from "react";
-import { useSpiderStore } from "../DataModels/ZuStore";
+import { useCStore } from "../DataModels/ZuStore";
 
 
 

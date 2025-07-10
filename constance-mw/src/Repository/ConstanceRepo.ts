@@ -1,6 +1,6 @@
 import { performBackendCall } from "../BizLogic/UtilFunctions";
 import { AppConfigConstants } from "../Models/Constants";
-import { ConfigItem } from "../Models/HelperModels";
+import { ConfigItem } from "../Models/ServiceModels";
 
 
 export class ConstanceRepo {

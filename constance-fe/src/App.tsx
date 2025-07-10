@@ -9,11 +9,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import { MantineProvider } from "@mantine/core";
 import PageTitle from "./CommonComponents/PageTitle";
 import axios from 'axios';
-import { useSpiderStore } from './DataModels/ZuStore';
+import { useCStore } from './DataModels/ZuStore';
 import { LoggedInUser, User } from './DataModels/HelperModels';
 import AsciiTextComp from './CommonComponents/AsciiText';
 import { ColorRing, RotatingLines } from 'react-loader-spinner';
-import { SPECIAL_BLUE_COLOR, SPECIAL_QUARTZ_COLOR } from './DataModels/Constants';
+import { EnvTypeEnum, SPECIAL_BLUE_COLOR, SPECIAL_QUARTZ_COLOR } from './DataModels/Constants';
 import { rfdcCopy } from './BizLogicUtilities/UtilFunctions';
 import { getApproverWGName } from './BizLogicUtilities/Permissions';
 
@@ -37,22 +37,23 @@ function App() {
     const colors = tokens(tm.palette.mode);
     
     //Can still use the context even here
-    const loggedInUser = useSpiderStore((state) => state.loggedInUser);
+    const loggedInUser = useCStore((state) => state.loggedInUser);
     
-    const mainTitle = useSpiderStore((state) => state.mainTitle)
-    const mainSubtitle = useSpiderStore((state) => state.mainSubtitle)
-    const clearBasicProjInfo = useSpiderStore((state) => state.clearBasicProjInfo)
-    const isLoadingBackdropEnabled = useSpiderStore((state) => state.isLoadingBackdropEnabled)
-    const setLoggedInUser = useSpiderStore((state) => state.setLoggedInUser);
+    const mainTitle = useCStore((state) => state.mainTitle)
+    const mainSubtitle = useCStore((state) => state.mainSubtitle)
+    const clearCurrentAppInfo = useCStore((state) => state.clearCurrentAppInfo)
+    const isLoadingBackdropEnabled = useCStore((state) => state.isLoadingBackdropEnabled)
+    const setLoggedInUser = useCStore((state) => state.setLoggedInUser);
+    const selectedEnvironment = useCStore((state) => state.selectedEnvironment)
 
     const [isUserLoggedIn, setIsUserLoggedIn] = useState<boolean>(false)
     
 
 
     function onLogoClick(event: any): void {
-        clearBasicProjInfo();
+        clearCurrentAppInfo();
         if(isUserLoggedIn) {
-            navigate("/projectlist")
+            navigate(`/list/${selectedEnvironment ?? EnvTypeEnum.DEVELOPMENT}`)
         }
         else {
             navigate("/")
@@ -75,13 +76,13 @@ function App() {
         setLoggedInUser(user); //Important!
         setIsUserLoggedIn(true)
         if(location.pathname === "/") {
-            navigate('/projectlist')
+            navigate(`/list/${selectedEnvironment ?? EnvTypeEnum.DEVELOPMENT}`)
         }
     }
 
 
     async function onLogOutOccured() {
-        clearBasicProjInfo();
+        clearCurrentAppInfo();
         setLoggedInUser(undefined);
         setIsUserLoggedIn(false);
         navigate('/')
@@ -175,96 +176,3 @@ export default App;
 
 
 
-
-
-
-//<LoadingOverlay loaderProps={{children: getChilds()}} visible={true} zIndex={1000} overlayProps={{ radius: "lg", blur: 9 }} />
-                             
-
-
-// styles={{
-//     root: { backgroundColor: colors.primary[500]},//colors.primary[600] },
-//     overlay: { color: 'red', backgroundColor: colors.primary[500]},
-//     loader: { fontSize: 20 },
-//   }}
-
-
-
-
-
-    //let isUserLoggedIn = (loggedInUser && loggedInUser.email.length > 0  && loggedInUser.idsid.length > 0  && loggedInUser.wwid.length > 0) ? true : false;
-
-
-
-
-    // const asciiContent = useMemo(() => {
-    //     let asciInfo = new Map<string, number>([
-    //       ['Standard', 10],
-    //       ['Bigfig', 10],
-    //       ['Block', 8],
-    //       ['Doh', 4],
-    //       ['Big Chief', 9],
-    //       ['Broadway KB', 10],
-    //       ['Cybermedium', 9],
-    //       ['Dot Matrix', 5]
-    //     ])
-
-    //     let quickRand = Math.floor(Math.random() * asciInfo.size);
-    //     let mapKey = [...asciInfo.keys()].at(quickRand) as any
-
-    //     return (<AsciiTextComp text={isUserLoggedIn? "welcome" : "Please login to continue..."} font={mapKey} fontSize={asciInfo.get(mapKey) as number}></AsciiTextComp> )
-
-    // }, [isUserLoggedIn]);
-
-
-
-    
-
-
-// : <Typography sx={{ mt: 30, ml: 2, color: colors.blueAccent[900],}}>
-//     {asciiContent}
-//   </Typography>
-
-
-
-
-          // <AsciiText text="Please login to continue..." font={"Dot Matrix"} fontSize={5}></AsciiText>
-          
-
-
-// {`Please Login to continue...`}
-// <AsciiText text="Please login to continue..." font={asciInfo.get(mapKey)"Big Chief" fontSize={8}></AsciiText>
-
-
-
-// const setLoadingSpinnerCtx = useSpiderStore((state) => state.setLoadingSpinnerCtx);
-//     const cancelLoadingSpinnerCtx = useSpiderStore((state) => state.cancelLoadingSpinnerCtx);
-//     const setLoggedInUser = useSpiderStore((state) => state.setLoggedInUser);
-
-//     const{ projectId } = useParams()
-
-    
-
-
-
-
-
-// {
-//     (navigation.state === "loading") 
-//     ? <Box sx={{ml: 2, mr: 2, mt: 33, display: 'flex', flexDirection:'column', alignItems : "center"}}>
-//           <Box sx={{ml: 2, mr: 2, mt: 1, display: 'flex', flexDirection:'column', alignItems : "center"}}>
-//               <RotatingLines
-//                   strokeColor={colors.greenAccent[400]}
-//                   strokeWidth="5"
-//                   animationDuration="0.75"
-//                   width="196"
-//                   visible={true}
-//               />
-//           </Box>
-    
-//           <Typography variant="h4" noWrap component="div" sx={{ mt: 3, ml: 2, color: colors.blueAccent[900], fontStyle: "italic"}}>
-//               {`Loading...`}
-//           </Typography> 
-//       </Box>
-//     : <Outlet />
-//   }

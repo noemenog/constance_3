@@ -1,5 +1,5 @@
 import { useContext, useRef, useState, useEffect } from "react";
-import { useSpiderStore } from "../../DataModels/ZuStore";
+import { useCStore } from "../../DataModels/ZuStore";
 
 
 
@@ -10,7 +10,7 @@ interface LogViewProps {
 
 
 const LogView: React.FC<LogViewProps> = ({  }) => {
-    const placePageTitle = useSpiderStore((state) => state.placePageTitle);
+    const placePageTitle = useCStore((state) => state.placePageTitle);
 
     useEffect(() => {
         placePageTitle("Logs")

@@ -12,7 +12,7 @@ import { BasicKVP, DisplayOption } from '../DataModels/HelperModels';
 import { Fragment, useState } from 'react';
 import { keyBy } from 'lodash';
 import { rfdcCopy } from '../BizLogicUtilities/UtilFunctions';
-import { useSpiderStore } from '../DataModels/ZuStore';
+import { useCStore } from '../DataModels/ZuStore';
 import { MultiRegexCollection } from '../CommonComponents/MultiRegexCollection';
 import { SpButton } from '../CommonComponents/SimplePieces';
 
@@ -84,7 +84,7 @@ const GeneralInfoDialog: React.FC<GeneralInfoDialogProps> = ({ title, warningTex
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
 
-    const displayQuickMessage = useSpiderStore((state) => state.displayQuickMessage);
+    const displayQuickMessage = useCStore((state) => state.displayQuickMessage);
     
     const [mapperSelections, setMapperSelections] = useState<Map<string, string>>(new Map<string, string>());
     const [regExprData, setRegExprData] = useState<BasicKVP[]>(regexExprDefaultValues ?? []);

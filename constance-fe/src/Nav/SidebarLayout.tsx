@@ -6,16 +6,15 @@ import { tokens } from '../theme';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
 import intelLogo from '../assets/intel-header-logo.svg';
-import appLogo from '../assets/spider_logo.svg';
 import styled from '@emotion/styled';
 import LogoComp, { StyledIntelLogoImg } from "../CommonComponents/LogoComp";
 import { useTheme } from "@mui/material/styles";
-import { AspectRatio, BlurOn, GridGoldenratio, GridOnOutlined, HelpOutline, Layers, MemoryOutlined, PowerOutlined, TableRows, VerifiedUser, WebStoriesOutlined } from "@mui/icons-material";
+import { AspectRatio, BlurOn, GridGoldenratio, GridOnOutlined, HelpOutline, Layers, MemoryOutlined, PowerOutlined, SettingsApplicationsOutlined, TableRows, VerifiedUser, WebStoriesOutlined } from "@mui/icons-material";
 import { Person } from "@microsoft/mgt-react";
 import { RotatingLines, Triangle } from  'react-loader-spinner'
 import { ActionSceneEnum, SPECIAL_RED_COLOR } from "../DataModels/Constants";
 import { ProjectRelatedMenuItem } from "../DataModels/HelperModels";
-import { useSpiderStore } from "../DataModels/ZuStore";
+import { useCStore } from "../DataModels/ZuStore";
 
 
 
@@ -56,37 +55,36 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
 
     const MENU_ITEM_HEIGHT = "33px" 
 
-    const loggedInUser = useSpiderStore((state) => state.loggedInUser);
-    const showMenu = useSpiderStore((state) => state.showMenu);
-    const basicProjInfo = useSpiderStore((state) => state.basicProjInfo)
-    const isMenuCollapsed = useSpiderStore((state) => state.isMenuCollapsed)
-    const setIsMenuCollapsed = useSpiderStore((state) => state.setIsMenuCollapsed)
-    const heightForSidebar = useSpiderStore((state) => state.heightForSidebar)
-    const menuCurrentScene = useSpiderStore((state) => state.menuCurrentScene)
-    const setMenuCurrentScene = useSpiderStore((state) => state.setMenuCurrentScene)
-    const loadingSpinnerCtx = useSpiderStore((state) => state.loadingSpinnerCtx)
+    const loggedInUser = useCStore((state) => state.loggedInUser);
+    const showMenu = useCStore((state) => state.showMenu);
+    const currentAppInfo = useCStore((state) => state.currentAppInfo)
+    const isMenuCollapsed = useCStore((state) => state.isMenuCollapsed)
+    const setIsMenuCollapsed = useCStore((state) => state.setIsMenuCollapsed)
+    const heightForSidebar = useCStore((state) => state.heightForSidebar)
+    const menuCurrentScene = useCStore((state) => state.menuCurrentScene)
+    const setMenuCurrentScene = useCStore((state) => state.setMenuCurrentScene)
+    const loadingSpinnerCtx = useCStore((state) => state.loadingSpinnerCtx)
     
     let isUserLoggedIn = (loggedInUser && loggedInUser.email.length > 0  && loggedInUser.idsid.length > 0  && loggedInUser.wwid.length > 0) ? true : false;
 
     const projMenuItems : Array<ProjectRelatedMenuItem> = useMemo(() => (
         [
-            {key: ActionSceneEnum.PROJECT, label: "Project Home", icon: <HomeOutlinedIcon />, onProjSelectionOnly: true, disabled: false},
-            {key: ActionSceneEnum.STACKUP, label: "Stackup", icon: <TableRows />, onProjSelectionOnly: true, disabled: false},
-            {key: ActionSceneEnum.LAYERGROUPS, label: "Layer Groups", icon: <Layers />, onProjSelectionOnly: true, disabled: false},
-            {key: ActionSceneEnum.DEFAULTCONSTRAINTS, label: "Default Constraints", icon: <GridGoldenratio />, onProjSelectionOnly: true, disabled: false},
-            {key: ActionSceneEnum.RULEAREAS, label: "Rule Areas", icon: <AspectRatio />, onProjSelectionOnly: true, disabled: false},
-            {key: ActionSceneEnum.NETS, label: "Nets", icon: <BlurOn />, onProjSelectionOnly: true, disabled: false},
-            {key: ActionSceneEnum.INTERFACES, label: "Interfaces", icon: <MemoryOutlined />, onProjSelectionOnly: true, disabled: false},
-            {key: ActionSceneEnum.C2CLAYOUT, label: "C2C (Clearances)", icon: <GridOnOutlined />, onProjSelectionOnly: true, disabled: false},
-            {key: ActionSceneEnum.POWERINFO, label: "Power Info", icon: <PowerOutlined />, onProjSelectionOnly: true, disabled: false},
+            {key: ActionSceneEnum.APPINFO, label: "App Home", icon: <HomeOutlinedIcon />, onProjSelectionOnly: true, disabled: false},
+            {key: ActionSceneEnum.CONFIGURATIONS, label: "Configurations", icon: <SettingsApplicationsOutlined />, onProjSelectionOnly: true, disabled: false},
+            // {key: ActionSceneEnum.LAYERGROUPS, label: "Layer Groups", icon: <Layers />, onProjSelectionOnly: true, disabled: false},
+            // {key: ActionSceneEnum.DEFAULTCONSTRAINTS, label: "Default Constraints", icon: <GridGoldenratio />, onProjSelectionOnly: true, disabled: false},
+            // {key: ActionSceneEnum.RULEAREAS, label: "Rule Areas", icon: <AspectRatio />, onProjSelectionOnly: true, disabled: false},
+            // {key: ActionSceneEnum.NETS, label: "Nets", icon: <BlurOn />, onProjSelectionOnly: true, disabled: false},
+            // {key: ActionSceneEnum.INTERFACES, label: "Interfaces", icon: <MemoryOutlined />, onProjSelectionOnly: true, disabled: false},
+            // {key: ActionSceneEnum.C2CLAYOUT, label: "C2C (Clearances)", icon: <GridOnOutlined />, onProjSelectionOnly: true, disabled: false},
+            // {key: ActionSceneEnum.POWERINFO, label: "Power Info", icon: <PowerOutlined />, onProjSelectionOnly: true, disabled: false},
             
-            {key: ActionSceneEnum.VALIDATIONS, label: "Validations", icon: <VerifiedUser />, onProjSelectionOnly: true, disabled: true},
+            // {key: ActionSceneEnum.VALIDATIONS, label: "Validations", icon: <VerifiedUser />, onProjSelectionOnly: true, disabled: true},
             {key: ActionSceneEnum.LOGS, label: "Logs", icon: <WebStoriesOutlined />, onProjSelectionOnly: true, disabled: true},
             {key: ActionSceneEnum.FAQS, label: "FAQ", icon: <HelpOutline />, onProjSelectionOnly: false, disabled: true}
         ]
     ), []); 
 
-    // let menuItemsToDisplay = displayProjRelatedMenuItems ? projMenuItems : projMenuItems.filter(a => a.onProjSelectionOnly === false);
     let menuItemsToDisplay = showMenu ? projMenuItems : projMenuItems.filter(a => a.onProjSelectionOnly === false);
 
     const menuItemStyles: MenuItemStyles = useMemo(() => ({
@@ -154,12 +152,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
     //project Name section
     let getProjectNameDisplay = () => {
         if(showMenu) {
-            let name = basicProjInfo?.name
+            let name = currentAppInfo?.name
             if(name && name.length > 0){
                 return (
                     <Box textAlign="center">
                         <Typography 
-                            sx={{ color: SPECIAL_RED_COLOR, //colors.greenAccent[400]
+                            sx={{ color: SPECIAL_RED_COLOR,
                             fontSize: (name.length <= 20) ? 14 : 10.5 }}>
                             {name ?? ''}
                         </Typography>
@@ -186,7 +184,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
                     minHeight: 600,
                     height: typeof(heightForSidebar) === 'number' && (heightForSidebar as number) > 0 
                         ? heightForSidebar
-                        : isMenuCollapsed // ["99vh" : "85vh"]  or [window.innerHeight-5 : window.innerHeight-138]
+                        : isMenuCollapsed
                             ? "99vh"
                             : "85.6vh"
                 }}>
@@ -228,7 +226,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
                                     component={
                                         <Link 
                                             to={menuItem.onProjSelectionOnly 
-                                                ? `/${menuItem.key}/${basicProjInfo?.id ?? ''}${menuItem.subPath ? '/' + menuItem.subPath : ''}`
+                                                ? `/${menuItem.key}/${currentAppInfo?._id ?? ''}${menuItem.subPath ? '/' + menuItem.subPath : ''}`
                                                 : `/${menuItem.key}`
                                             } 
                                             onClick={() => {setMenuCurrentScene(menuItem.key)}}
@@ -278,11 +276,3 @@ export default SidebarLayout;
 
 
 
-
-// const StyledLogoImg = styled.img`
-//     width: 50px;
-//     height: 50px;
-//     margin-right: 0px;
-//     margin-left: 0px;
-//     margin-top: 0px;
-// `

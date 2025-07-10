@@ -9,7 +9,7 @@ import { tokens } from "../theme";
 import FileDropZone from '../CommonComponents/FileDropZone';
 import { FileRejection, FileWithPath } from '@mantine/dropzone';
 import { BasicKVP } from '../DataModels/HelperModels';
-import { useSpiderStore } from '../DataModels/ZuStore';
+import { useCStore } from '../DataModels/ZuStore';
 import { SpButton } from '../CommonComponents/SimplePieces';
 
 
@@ -36,7 +36,7 @@ const FileCaptureDialog: React.FC<FileCaptureDialogProps> = ({ title, warningTex
 
     const [addedFiles, setAddedFiles] = React.useState<FileWithPath[]>(new Array<FileWithPath>())
 
-    const displayQuickMessage = useSpiderStore((state) => state.displayQuickMessage);
+    const displayQuickMessage = useCStore((state) => state.displayQuickMessage);
 
     const handleCancel = () => {
         if (onFormClosed) {

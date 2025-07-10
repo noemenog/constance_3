@@ -15,7 +15,7 @@ import { IMsalContext, useIsAuthenticated, useMsal } from '@azure/msal-react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import intelLogo from '../assets/intel-header-logo.svg';
 import LogoComp from "../CommonComponents/LogoComp";
-import { useSpiderStore } from "../DataModels/ZuStore";
+import { useCStore } from "../DataModels/ZuStore";
 import { getPermissionEntitlementsForCurrentUser } from "../BizLogicUtilities/FetchData";
 import { loadAWGStatusForLoggedInUser, loadEntitlementsForLoggedInUser } from "../BizLogicUtilities/Permissions";
 import { isResolutionWorseThan1080p } from "../BizLogicUtilities/UtilFunctions";
@@ -52,12 +52,12 @@ const TopBar: React.FC<TopBarProps> = ({ appName, appVersion, onLoginSuccessful,
     const{ projectId } = useParams()
 
     //zustand impl
-    const setLoggedInUser = useSpiderStore((state) => state.setLoggedInUser);
-    const setDisplayQuickMessage = useSpiderStore((state) => state.setDisplayQuickMessage)
-    const isMenuCollapsed = useSpiderStore((state) => state.isMenuCollapsed)
-    const clearBasicProjInfo = useSpiderStore((state) => state.clearBasicProjInfo);
-    const setLoadingSpinnerCtx = useSpiderStore((state) => state.setLoadingSpinnerCtx);
-    const cancelLoadingSpinnerCtx = useSpiderStore((state) => state.cancelLoadingSpinnerCtx);
+    const setLoggedInUser = useCStore((state) => state.setLoggedInUser);
+    const setDisplayQuickMessage = useCStore((state) => state.setDisplayQuickMessage)
+    const isMenuCollapsed = useCStore((state) => state.isMenuCollapsed)
+    const clearCurrentAppInfo = useCStore((state) => state.clearCurrentAppInfo);
+    const setLoadingSpinnerCtx = useCStore((state) => state.setLoadingSpinnerCtx);
+    const cancelLoadingSpinnerCtx = useCStore((state) => state.cancelLoadingSpinnerCtx);
 
     
     useMemo(() => {
@@ -104,7 +104,7 @@ const TopBar: React.FC<TopBarProps> = ({ appName, appVersion, onLoginSuccessful,
                     }
                     
                     setTimeout(() => {
-                        const store = useSpiderStore.getState();  //need to use this strategy here!
+                        const store = useCStore.getState();  //need to use this strategy here!
                         let initMsg = store.initConfigs?.find(a => a.configName === CONFIGITEM__Init_Display_Message)?.configValue
                         if(initMsg && initMsg.messageType && initMsg.message && initMsg.message.length > 0) {
                             let time = ((initMsg.msTime && initMsg.msTime !== 0) ? initMsg.msTime : 6000)
@@ -235,31 +235,3 @@ export default TopBar;
 
 
 
-
-
-
-
-
-
-
- 
-// setTimeout(() => {
-//     displaySnackBarMessage(UIMessageType.INFO_MSG, "Display Recommendation: 1440p display resolution or above, at 100% scale. BARE MINIMUM: 1080p resolution, DEFINITELY at 100% scale.", 6000); 
-// }, 7000);
-
-
-
-// if(projectId && projectId.trim().length > 0) {
-//     setLoadingSpinnerCtx({enabled: true, text: "Retrieving additional permission for current user. Please wait..."} as LoadingSpinnerInfo)
-//     let awgStatus : QuickStatus = await getPermissionAWGItemsForCurrentUser(user, projectId).finally(() => { cancelLoadingSpinnerCtx() })
-//     let awgName = awgStatus?.message;
-//     if(awgStatus && awgStatus.isSuccessful === true && awgName.trim().length > 0) {
-//         user.perms.set(awgName, awgName) //This indicates we have looked up this AWG and found that currently logged in user belongs to the group
-//     }
-//     else {
-//         user.perms.set(awgName, "") ; //This indicates we have looked up this AWG and found nothing for logged in user
-//     }
-// }
-
-
-                            

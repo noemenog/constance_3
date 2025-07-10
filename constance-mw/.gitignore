@@ -24,6 +24,3 @@ yarn-debug.log*
 yarn-error.log*
 
 __archived
-
-CONFIGS_backup.txt
-THROWAY.ts

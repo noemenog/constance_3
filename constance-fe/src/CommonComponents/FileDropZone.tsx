@@ -3,7 +3,7 @@ import { Dropzone, DropzoneProps, FileRejection, FileWithPath, IMAGE_MIME_TYPE, 
 import { Theme } from '@mui/material/styles';
 import { Clear, FileUploadOutlined, UploadFileOutlined } from '@mui/icons-material';
 import { useState } from 'react';
-import { useSpiderStore } from '../DataModels/ZuStore';
+import { useCStore } from '../DataModels/ZuStore';
 import { UIMessageType } from '../DataModels/Constants';
 
 
@@ -20,7 +20,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({ height, acceptableMimeTypes
 
     const [loading, setLoading] = useState<boolean>(false);
 
-    const displayQuickMessage = useSpiderStore((state) => state.displayQuickMessage);
+    const displayQuickMessage = useCStore((state) => state.displayQuickMessage);
 
     function onDropped(files: FileWithPath[]): void {
         if (multipleFilesAllowed === false) {

@@ -1,1 +1,1 @@
-Spider constraint management app - frontend, middleware, & deployment helm chart.
+Constance - A configuration management system - frontend, middleware, & deployment helm chart.
