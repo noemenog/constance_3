@@ -377,12 +377,12 @@ const AppInfoList: React.FC<AppInfoListProps> = () => {
 
     
 
-    function onEnvironmentChanged(value: string | null) {
-        if(value && value.length > 0) {
-            setSelectedEnvironment(value as EnvTypeEnum);
-            navigate(`/list/${value}`);  
-        } 
-    }
+    // function onEnvironmentChanged(value: string | null) {
+    //     if(value && value.length > 0) {
+    //         setSelectedEnvironment(value as EnvTypeEnum);
+    //         navigate(`/list/${value}`);  
+    //     } 
+    // }
 
     
     function handleNewAppInfoAction(): void {
@@ -433,18 +433,18 @@ const AppInfoList: React.FC<AppInfoListProps> = () => {
                         associatedProperties: []
                     }
                     setLoadingSpinnerCtx({enabled: true, text: "Now creating new app context. Please wait..."} as LoadingSpinnerInfo)      
-                    let addedAppInfo = await addNewAppInfo(selectedEnvironment, newApp).finally(() => { cancelLoadingSpinnerCtx() })
+                    let addedAppInfo = await addNewAppInfo(EnvTypeEnum.DEVELOPMENT, newApp).finally(() => { cancelLoadingSpinnerCtx() })
                     if(addedAppInfo) {
                         // let res = await setupPermissionsForNewProject(loggedInUser, addedAppInfo, false)
                         // if (res === true) {
                             displayQuickMessage(UIMessageType.SUCCESS_MSG, "New AppInfo added successfully!");
                             clearCurrentAppInfo();
-                            navigate(`/${ActionSceneEnum.APPINFO}/${selectedEnvironment}/${addedAppInfo._id}/overview`)
+                            navigate(`/${ActionSceneEnum.APPINFO}/${EnvTypeEnum.DEVELOPMENT}/${addedAppInfo._id}/overview`)
                         // }
                     }
                     else{
                         clearCurrentAppInfo();
-                        navigate(`/list/${selectedEnvironment}`);  
+                        navigate(`/list`);  
                     }
                 }
             }
@@ -457,7 +457,7 @@ const AppInfoList: React.FC<AppInfoListProps> = () => {
         <Box ref={containerRef} flexDirection="column" alignItems="center">
             <Box flexDirection="row" display="flex"  alignItems="center" sx={{  width:"100%", m: "1px"}}>
                 
-                <Box flexDirection="row" display="flex" justifyContent="space-between" alignItems="center" >
+                {/* <Box flexDirection="row" display="flex" justifyContent="space-between" alignItems="center" >
                     <Autocomplete 
                         value={selectedEnvironment}
                         onChange={(event: any, value: string | null) => { onEnvironmentChanged(value)}}
@@ -480,7 +480,7 @@ const AppInfoList: React.FC<AppInfoListProps> = () => {
                 </Box>
                 
                 <Divider orientation="vertical" sx={{height: 50, marginLeft: 8, marginRight:8, }} />
-                
+                 */}
                 <Box display="flex" sx={{ backgroundColor: colors.primary[400],  width:"66%"}}>
                     <InputBase size="small" sx={{ ml: 2, flex: 1}}  placeholder="Search" onChange={onSearchFieldTextChange}/>
                     <IconButton sx={{ p: '5px' }}>

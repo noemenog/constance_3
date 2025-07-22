@@ -1,5 +1,5 @@
 import { Params, redirect } from "react-router";
-import { ActionSceneEnum, CONFIGITEM__Page_Title_Settings, ErrorSeverityValue } from "../DataModels/Constants";
+import { ActionSceneEnum, CONFIGITEM__Page_Title_Settings, EnvTypeEnum, ErrorSeverityValue } from "../DataModels/Constants";
 import { useCStore } from "../DataModels/ZuStore";
 import { BasicProperty, ConfigItem, PropertyItem, CDomainData, User } from "../DataModels/HelperModels";
 import { performBackendCall, rfdcCopy, sortByLastUpdatedDate, verifyNaming } from "./UtilFunctions";
@@ -43,7 +43,7 @@ export async function handleTheBasics(appId: string|null, scene: ActionSceneEnum
             let errMsg = `AppInfo with the following ID was not found in the system: ${appId}`
             DisplayError("204", ErrorSeverityValue.ERROR, errMsg);
             console.error(errMsg);
-            throw redirect(`/list/${store.selectedEnvironment}`)
+            throw redirect(`/list`)
         }
 
         store.setCurrentAppInfo(domainData.appInfo)
@@ -82,7 +82,7 @@ export async function appInfoListLoader(request: Request, params: Params) : Prom
     let forceGetConfig = (!store.initConfigs || (store.initConfigs.length === 0)) ? true : false;
     domainData = await handleTheBasics(null, ActionSceneEnum.ROOT, forceGetConfig)
     
-    let appList = await fetchAppList(store.selectedEnvironment) ?? [];
+    let appList = await fetchAppList(EnvTypeEnum.DEVELOPMENT) ?? [];  //Always from dev
     domainData.appInfoCollection = appList;
 
     store.setCurrentAppInfo(domainData.appInfo) //domainData.project is set by handleTheBasics()

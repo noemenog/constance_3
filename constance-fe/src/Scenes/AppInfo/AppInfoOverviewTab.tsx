@@ -655,7 +655,7 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({  }) => {
                                                                 <BuildCircleOutlined fontSize="large" color="secondary"/>
                                                             </IconButton>
                                                         </Tooltip>
-                                                        <Typography sx={{ }}>Rename</Typography>
+                                                        <Typography sx={{ }}>Edit Profile</Typography>
                                                     </Box>
                                                     
                                                     <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
@@ -683,7 +683,7 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({  }) => {
                                                                 <CopyAllOutlined fontSize="large" color="secondary"/>
                                                             </IconButton>
                                                         </Tooltip>
-                                                        <Typography sx={{ }}>Clone</Typography>
+                                                        <Typography sx={{ }}>Clone App</Typography>
                                                     </Box>
 
                                                     <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
@@ -699,7 +699,7 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({  }) => {
                                                                 }
                                                             </IconButton>
                                                         </Tooltip>
-                                                        <Typography sx={{ }}>Lock</Typography>
+                                                        <Typography sx={{ }}>Lock App</Typography>
                                                     </Box>
 
                                                     <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
@@ -712,7 +712,7 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({  }) => {
                                                                 <DeleteForeverOutlined fontSize="large" color="secondary"/>
                                                             </IconButton>
                                                         </Tooltip>
-                                                        <Typography sx={{ }}>Delete</Typography>
+                                                        <Typography sx={{ }}>Delete App</Typography>
                                                     </Box>
                                                     
                                                 </Box>

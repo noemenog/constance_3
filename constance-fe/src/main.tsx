@@ -60,7 +60,7 @@ const router = createBrowserRouter([
         loader: ({ request, params }: LoaderFunctionArgs) => baseRouteLoader(request, params),
         children: [
             {
-                path: "list/:env",
+                path: "list",
                 element: <AppInfoList />,
                 loader: ({ request, params }: LoaderFunctionArgs) => appInfoListLoader(request, params),
             },

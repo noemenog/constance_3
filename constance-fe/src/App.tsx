@@ -53,7 +53,7 @@ function App() {
     function onLogoClick(event: any): void {
         clearCurrentAppInfo();
         if(isUserLoggedIn) {
-            navigate(`/list/${selectedEnvironment ?? EnvTypeEnum.DEVELOPMENT}`)
+            navigate(`/list`)
         }
         else {
             navigate("/")
@@ -76,7 +76,7 @@ function App() {
         setLoggedInUser(user); //Important!
         setIsUserLoggedIn(true)
         if(location.pathname === "/") {
-            navigate(`/list/${selectedEnvironment ?? EnvTypeEnum.DEVELOPMENT}`)
+            navigate(`/list`)
         }
     }
 

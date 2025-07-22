@@ -26,7 +26,6 @@ body,
 }
 
 .ag-theme-alpine-dark, .ag-theme-alpine {
-  /* --ag-font-family: "intelclear" !important; */
   --ag-font-size: 13px !important;
 }
 .ag-cell {
