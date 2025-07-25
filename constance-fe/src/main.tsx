@@ -23,7 +23,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import Error404Page from './CommonComponents/ErrorDisplay';
 import { ActionSceneEnum } from './DataModels/Constants';
-import AppInfoDetails from './Scenes/AppInfo/AppInfoDetails';
+import AppInfoContainer from './Scenes/AppInfo/AppInfoContainer';
 import AppInfoList from './Scenes/AppInfo/AppInfoList';
 import FAQPage from './Scenes/Support/FAQPage';
 import LogView from './Scenes/Support/LogView';
@@ -66,21 +66,26 @@ const router = createBrowserRouter([
             },
             {
                 path: `${ActionSceneEnum.APPINFO}/:env/:appId/:tabInfo`,
-                element: <AppInfoDetails />,
+                element: <AppInfoContainer />,
                 loader: ({ request, params }: LoaderFunctionArgs) => appInfoDetailsLoader(request, params),
             },
             {
                 path: `${ActionSceneEnum.APPINFO}/:env/:appId`,
-                element: <AppInfoDetails />,
+                element: <AppInfoContainer />,
                 loader: ({ request, params }: LoaderFunctionArgs) => appInfoDetailsLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.CONFIGURATIONS}/:env/:appId/:bucketId/:configId/:version`,
+                path: `${ActionSceneEnum.CONFIGS}/:env/:appId/:bucketId/:configId/:version`,
                 element: <BucketDetails222 />,
                 loader: ({ request, params }: LoaderFunctionArgs) => bucketConfigLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.CONFIGURATIONS}/:env/:appId/:bucketId`,
+                path: `${ActionSceneEnum.CONFIGS}/:env/:appId/:bucketId`,
+                element: <BucketDetails222 />,
+                loader: ({ request, params }: LoaderFunctionArgs) => bucketConfigLoader(request, params),
+            },
+            {
+                path: `${ActionSceneEnum.CONFIGS}/:env/:appId`,
                 element: <BucketDetails222 />,
                 loader: ({ request, params }: LoaderFunctionArgs) => bucketConfigLoader(request, params),
             },

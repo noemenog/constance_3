@@ -5,7 +5,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { useTheme } from "@mui/material/styles";
 import { useLoaderData, useLocation, useNavigate } from "react-router-dom";
 import { themeDarkBlue, tokens } from "../../theme";
-import { AddOutlined, BuildCircleOutlined, CameraEnhanceOutlined, Cancel, CopyAllOutlined, DeleteForeverOutlined, DoNotDisturbOnTotalSilenceOutlined, EditNoteOutlined, LockOpenOutlined, LockOutlined, PlaylistAddCheckCircle, PlaylistAddCheckCircleOutlined, PlaylistAddCircleOutlined, PublishedWithChangesOutlined, SettingsOutlined } from "@mui/icons-material";
+import { AddOutlined, BuildCircleOutlined, CameraEnhanceOutlined, Cancel, CopyAllOutlined, DeleteForeverOutlined, DoNotDisturbOnTotalSilenceOutlined, EditNoteOutlined, LockOpenOutlined, LockOutlined, MoveUpOutlined, PlaylistAddCheckCircle, PlaylistAddCheckCircleOutlined, PlaylistAddCircleOutlined, PublishedWithChangesOutlined, SettingsOutlined } from "@mui/icons-material";
 import { Text, Timeline } from "@mantine/core";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, ColGroupDef, GridApi } from "ag-grid-community";
@@ -13,8 +13,8 @@ import { convertUTCToLocalDateTimeString, getDateAppendedName, rfdcCopy, verifyN
 import { useDisclosure } from "@mantine/hooks";
 import SimpleTextDialog, { SimpleTextDialogProps } from "../../FormDialogs/SimpleTextDialog";
 import ConfirmationDialog, { ConfirmationDialogActionType, ConfirmationDialogProps } from "../../FormDialogs/ConfirmationDialog";
-import { ActionSceneEnum, NamingContentTypeEnum, SPECIAL_RED_COLOR, UIMessageType, PermissionActionEnum, SPECIAL_EVEN_DEEPER_QUARTZ_COLOR, EnvTypeEnum, ENVIRONMENTLIST } from "../../DataModels/Constants";
-import { BasicKVP, BasicProperty, PropertyItem, CDomainData, StatusIndicatorItem } from "../../DataModels/HelperModels";
+import { ActionSceneEnum, NamingContentTypeEnum, SPECIAL_RED_COLOR, UIMessageType, PermissionActionEnum, SPECIAL_EVEN_DEEPER_QUARTZ_COLOR, EnvTypeEnum, ENVIRONMENTLIST, SPECIAL_BLUE_COLOR, SPECIAL_GOLD_COLOR, BASIC_NAME_VALIDATION_REGEX, SPECIAL_DARKMODE_TEXTFIELD_COLOR } from "../../DataModels/Constants";
+import { BasicKVP, BasicProperty, PropertyItem, CDomainData, StatusIndicatorItem, DisplayOption } from "../../DataModels/HelperModels";
 import { AppInfo } from "../../DataModels/ServiceModels";
 import { useCStore } from "../../DataModels/ZuStore";
 // import { cloneProject, createSnapshots, deleteProject, deleteSnapshots, restoreSnapshots, updateProject } from "../../BizLogicUtilities/FetchData";
@@ -22,24 +22,17 @@ import { LoadingSpinnerInfo, LoggedInUser, QuickStatus } from "../../DataModels/
 // import { deleteProjectPermissionElements, getHighestProjectPermRoleForLoggedInUser, getInitPermRolesArray, handleLockAction, isUserApprovedForCoreAction, setupPermissionsForNewProject } from "../../BizLogicUtilities/Permissions";
 import { handleLockAction, isUserApprovedForCoreAction } from "../../BizLogicUtilities/Permissions";
 import { deleteAppInfo } from "../../BizLogicUtilities/FetchData";
+import { MultiTextEntryField } from "../../CommonComponents/MultiTextEntryField";
 
 
 
 
 
-interface GenPropCtx {
-    projectHasProps : boolean,
-    projOtherDescriptiveProps : Array<PropertyItem>;
-    projKeyContactsProps : Array<PropertyItem>;
-    projHighestUserRole: BasicKVP;
-}
-
-
-interface ProjectOverviewTabProps {
+interface AppInfoOverviewTabProps {
     
 }
 
-const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({  }) => {
+const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const navigate = useNavigate();
@@ -65,8 +58,6 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({  }) => {
     
     const [simpleTextModalState, simpleTextModalActioner] = useDisclosure(false);
     const [simpleTextDialogProps, setSimpleTextDialogProps] = useState<SimpleTextDialogProps>()
-
-    const [genPropCtx, setGenPropCtx] = useState<GenPropCtx>()
 
     const containerRef = useRef<any>();
 
@@ -594,145 +585,168 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({  }) => {
             <Divider sx={{ marginLeft: .5, marginRight: 0 }} /> 
             */}
 
-            <Box sx={{display: 'flex', mr: 1, justifyContent: "center", flexDirection: "column"}}>
-                <Box sx={{ flexGrow: 1, display: "inline-flex" }}>
-                    <Box sx={{ display: "flex", justifyContent: "center", minWidth: "600px", width: "82vw", }} >
-                        <Box sx={{ display: 'flex', mt: 3}}>
-                            <Card sx={{ textAlign: "center", backgroundColor: SPECIAL_EVEN_DEEPER_QUARTZ_COLOR, borderRadius: 5, ml: 1, mr: 1, width: 900, height: 210 }} raised>
-                                <Divider sx={{ mt: 1, mb: 1}}/>
-                                <Table sx={{ ml: 2, width: "96%" }}>
-                                    <TableBody>
-                                        
-                                        <TableRow sx={{ borderBottom: 1}}> 
-                                            <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
-                                                <Typography sx={{ mr: 2}}>Name :</Typography>
-                                            </TableCell>
-                                            <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
-                                                <Typography sx={{ mr: 1}}> {appInfo.name} </Typography>
-                                            </TableCell>   
-                                        </TableRow>
+            <Box sx={{display: 'flex', mt: 1.5, mr: 1, justifyContent: "center", flexDirection: "column"}}>
+                <Box sx={{ display: 'flex', justifyContent: "center", minWidth: "600px" }}>
+                    <Card sx={{ textAlign: "center", backgroundColor: SPECIAL_EVEN_DEEPER_QUARTZ_COLOR, borderRadius: 5, ml: 1, mr: 1, width: 900, height: 130 }} raised>
+                        <Divider sx={{ mt: 1, mb: 1}}/>
+                        <Table sx={{ ml: 2, width: "96%" }}>
+                            <TableBody>
+                                
+                                <TableRow sx={{ borderBottom: 1}}> 
+                                    <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
+                                        <Typography sx={{ mr: 2}}>Name :</Typography>
+                                    </TableCell>
+                                    <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
+                                        <Typography sx={{ mr: 1}}> {appInfo.name} </Typography>
+                                    </TableCell>   
+                                </TableRow>
 
-                                        <TableRow sx={{ borderBottom: 1}}> 
-                                            <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
-                                                <Typography sx={{ mr: 2}}>Created By :</Typography>
-                                            </TableCell>
-                                            <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
-                                                <Typography sx={{ mr: 1}}> {appInfo.createdBy} </Typography>
-                                            </TableCell>   
-                                        </TableRow>
+                                <TableRow sx={{ borderBottom: 1}}> 
+                                    <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
+                                        <Typography sx={{ mr: 2 }}>Created By :</Typography>
+                                    </TableCell>
+                                    <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
+                                        <Typography sx={{ mr: 1}}> {appInfo.createdBy} </Typography>
+                                    </TableCell>   
+                                </TableRow>
+                                
+                                <TableRow sx={{ borderBottom: 1}}> 
+                                    <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
+                                        <Typography sx={{ mr: 2}}>Environments :</Typography>
+                                    </TableCell>
+                                    <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
+                                        <Typography sx={{ mr: 1}}>{appEnvironmentList}</Typography>
+                                    </TableCell>   
+                                </TableRow>
 
-                                        <TableRow sx={{ borderBottom: 1}}> 
-                                            <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
-                                                <Typography sx={{ mr: 2}}>Description :</Typography>
-                                            </TableCell>
-                                            <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
-                                                <Typography sx={{ mr: 1}}> {appInfo.description} </Typography>
-                                            </TableCell>   
-                                        </TableRow>
-                                        
-                                        <TableRow sx={{ borderBottom: 1}}> 
-                                            <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
-                                                <Typography sx={{ mr: 2}}>Environments :</Typography>
-                                            </TableCell>
-                                            <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
-                                                <Typography sx={{ mr: 1}}>{appEnvironmentList}</Typography>
-                                            </TableCell>   
-                                        </TableRow>
-
-                                        <TableRow> 
-                                            <TableCell colSpan={2} size="small" width={"20%"} sx={{ padding: 0, fontSize: 14, borderBottom: 0}}>
-                                                <Typography sx={{ mr: 2}}>Actions</Typography>
-                                            </TableCell>  
-                                        </TableRow>
-
-                                        <TableRow>
-                                            <TableCell colSpan={2} size="small" sx={{ padding: 0, fontSize: 13, borderBottom: 0}}>
-                                                <Box display="flex" flexDirection="row" >
-                                                    
-                                                    <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
-                                                        <Tooltip placement="top" title={`Update core project info & settings`}>
-                                                            <IconButton onClick={handleProjectProfileInfo}>
-                                                                <BuildCircleOutlined fontSize="large" color="secondary"/>
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        <Typography sx={{ }}>Edit Profile</Typography>
-                                                    </Box>
-                                                    
-                                                    <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
-                                                        <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
-                                                    </Slide>
-
-                                                    <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
-                                                        <Tooltip placement="top" title={`Edit descriptive project properties`}>
-                                                            <span>
-                                                                <IconButton disabled={false} onClick={handlePropEditingAction}>
-                                                                    <PlaylistAddCircleOutlined fontSize="large" color={"secondary"} />
-                                                                </IconButton>
-                                                            </span>
-                                                        </Tooltip>
-                                                        <Typography sx={{ }}>Add Buckets</Typography>
-                                                    </Box>
-
-                                                    <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
-                                                        <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
-                                                    </Slide>
-
-                                                    <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
-                                                        <Tooltip placement="top" title={`Clone Project`}>
-                                                            <IconButton onClick={handleCloneAction}>
-                                                                <CopyAllOutlined fontSize="large" color="secondary"/>
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        <Typography sx={{ }}>Clone App</Typography>
-                                                    </Box>
-
-                                                    <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
-                                                        <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
-                                                    </Slide>
-
-                                                    <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
-                                                        <Tooltip placement="top" title={(appInfo.lockedBy && appInfo.lockedBy.length > 0) ? `Unlock Project`: `Lock Project`}>
-                                                            <IconButton onClick={processProjectLockAndUnlock}>
-                                                                {(appInfo.lockedBy && appInfo.lockedBy.length > 0)
-                                                                    ? <LockOutlined fontSize="large" sx={{ color: SPECIAL_RED_COLOR}} />
-                                                                    : <LockOpenOutlined fontSize="large" color="secondary"/>
-                                                                }
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        <Typography sx={{ }}>Lock App</Typography>
-                                                    </Box>
-
-                                                    <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
-                                                        <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
-                                                    </Slide>
-
-                                                    <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
-                                                        <Tooltip placement="top" title={`Delete Project`}>
-                                                            <IconButton onClick={handleProjectDeleteAction}>
-                                                                <DeleteForeverOutlined fontSize="large" color="secondary"/>
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        <Typography sx={{ }}>Delete App</Typography>
-                                                    </Box>
-                                                    
-                                                </Box>
-                                            </TableCell>   
-                                        </TableRow>
-
-                                    </TableBody>
-                                </Table>
-                                <Divider sx={{ mt: 1, mb: 1}}/>
-                            </Card>
-                        </Box>                            
-                    </Box>
+                                <TableRow sx={{ border: 0}}> 
+                                    <TableCell size="small" width={"20%"} sx={{ borderBottom: 0, padding: 0, fontSize: 14}}>
+                                        <Typography sx={{ mr: 2}}>Description :</Typography>
+                                    </TableCell>
+                                    <TableCell size="small" sx={{ borderBottom: 0, padding: 0, fontSize: 13}}>
+                                        <Typography sx={{ mr: 1}}> {appInfo.description} </Typography>
+                                    </TableCell>   
+                                </TableRow>
+                                
+                            </TableBody>
+                        </Table>
+                        <Divider sx={{ mt: 2, mb: 1}}/>
+                    </Card>
                 </Box>
             
-                <Box display="flex" justifyContent="center" sx={{ mb: 5, mt: 5  }}>
+                <Box sx={{display: 'flex', mt: 2, mr: 1, justifyContent: "center", flexDirection: "column"}}>
+                    <Box sx={{ display: 'flex', justifyContent: "center", minWidth: "600px" }}>
+                        <Card sx={{ textAlign: "center", backgroundColor: SPECIAL_EVEN_DEEPER_QUARTZ_COLOR, borderRadius: 5, ml: 1, mr: 1, width: 900, height: 138 }} raised>
+                            <Divider sx={{ mt: 1, mb: 1}}/>
+                            <Table sx={{ ml: 2, width: "96%" }}>
+                                <TableBody>
+                                    
+                                    <TableRow> 
+                                        <TableCell colSpan={2} size="small" width={"20%"} sx={{ padding: 1, fontSize: 14, borderBottom: 0 }}>
+                                            <Typography variant="h5" sx={{ fontWeight: "bold", color: colors.greenAccent[400], textAlign: "center", mr: 2}}>Actions</Typography>
+                                        </TableCell>  
+                                    </TableRow> 
+                                    
+
+                                    <TableRow>
+                                        <TableCell colSpan={2} size="small" sx={{ padding: 0, fontSize: 13, borderBottom: 0}}>
+                                            <Box display="flex" flexDirection="row" sx={{alignContent: "center", justifyContent: "center", textAlign: "center", alignSelf: "center" }}>
+                                                
+                                                <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+                                                    <Tooltip placement="top" title={`Update core project info & settings`}>
+                                                        <IconButton onClick={handleProjectProfileInfo}>
+                                                            <BuildCircleOutlined fontSize="large" color="secondary"/>
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Typography sx={{ }}>Edit Profile</Typography>
+                                                </Box>
+                                                
+                                                <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+                                                    <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
+                                                </Slide>
+
+                                                <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+                                                    <Tooltip placement="top" title={`Edit descriptive project properties`}>
+                                                        <span>
+                                                            <IconButton disabled={false} onClick={handlePropEditingAction}>
+                                                                <MoveUpOutlined fontSize="large" color={"secondary"} />
+                                                            </IconButton>
+                                                        </span>
+                                                    </Tooltip>
+                                                    <Typography sx={{ }}>Export All</Typography>
+                                                </Box>
+
+                                                <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+                                                    <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
+                                                </Slide>
+
+                                                <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+                                                    <Tooltip placement="top" title={`Clone Project`}>
+                                                        <IconButton onClick={handleCloneAction}>
+                                                            <CopyAllOutlined fontSize="large" color="secondary"/>
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Typography sx={{ }}>Clone App</Typography>
+                                                </Box>
+
+                                                <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+                                                    <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
+                                                </Slide>
+
+                                                <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+                                                    <Tooltip placement="top" title={(appInfo.lockedBy && appInfo.lockedBy.length > 0) ? `Unlock Project`: `Lock Project`}>
+                                                        <IconButton onClick={processProjectLockAndUnlock}>
+                                                            {(appInfo.lockedBy && appInfo.lockedBy.length > 0)
+                                                                ? <LockOutlined fontSize="large" sx={{ color: SPECIAL_RED_COLOR}} />
+                                                                : <LockOpenOutlined fontSize="large" color="secondary"/>
+                                                            }
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Typography sx={{ }}>Lock App</Typography>
+                                                </Box>
+
+                                                <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+                                                    <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
+                                                </Slide>
+
+                                                <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+                                                    <Tooltip placement="top" title={`Delete Project`}>
+                                                        <IconButton onClick={handleProjectDeleteAction}>
+                                                            <DeleteForeverOutlined fontSize="large" color="secondary"/>
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Typography sx={{ }}>Delete App</Typography>
+                                                </Box>
+                                                
+                                            </Box>
+                                        </TableCell>   
+                                    </TableRow>
+
+                                </TableBody>
+                            </Table>
+                            <Divider sx={{ mt: 1, mb: 1}}/>
+                        </Card>
+                    </Box>                            
+                </Box>
+
+                <Box display="flex" justifyContent="center" sx={{ mt: 3, mb: 3 }}>
                     <Slide timeout={{ enter: 500, exit: 500 }} direction="down" in={true} container={containerRef.current}>
                         <Divider sx={{ width: "80%" }} />
                     </Slide>
                 </Box>
-                <div style={{ height: "42vh" }}>
+                
+                <Box display="flex" justifyContent="center" sx={{ ml: .5, mb: 1 }}>
+                    <MultiTextEntryField 
+                        labelText={`Add New Bucket(s)`}
+                        onItemAdded={(items: DisplayOption[]) => {}}
+                        regexForValidation={BASIC_NAME_VALIDATION_REGEX} 
+                        textFieldStyle={{backgroundColor: SPECIAL_DARKMODE_TEXTFIELD_COLOR, width: "80vw"}}
+                        addButtonStyle={{ fontSize: 27}}
+                        disabled={false}
+                    />
+                </Box>
+
+                <div style={{ height: "41vh" }}>
                     <AgGridReact
                         rowData={[]}
                         animateRows={true}
@@ -760,9 +774,228 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({  }) => {
 
 }
 
-export default ProjectOverviewTab
+export default AppInfoOverviewTab
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// return (
+//         <Box ref={containerRef}>
+//             {/*         
+//             <Box flexDirection="column" alignItems="center" >          
+//                 <Box  height={50} sx={{ overflow: 'hidden', display: "flex", flexDirection:"row", ml: 1 }} ref={containerRef}>
+//                     <Box flexDirection="row" display="flex" alignItems="center" sx={{  width:"100%", m: 0}}>
+//                         <Autocomplete 
+//                             value={appInfo.name ?? ""}
+//                             onChange={(event: any, value: string | null) => { }}
+//                             key="ra-sel-cb"
+//                             freeSolo={false}
+//                             filterSelectedOptions={true}
+//                             disablePortal
+//                             disableListWrap
+//                             size="small"
+//                             id="ra-sel-cb"
+//                             sx={{ mt:.7, minWidth: 350 }}
+//                             options={['', appInfo.name ?? []]}
+//                             renderInput={(params) => <TextField {...params} 
+//                                 label="Select App" 
+//                                 size="small" 
+//                                 sx={{ '& .MuiInputBase-input': { fontSize: (appInfo?.name && appInfo?.name.length > 30) ? 9.5 : 12.5 } }}
+//                             />}
+//                         /> 
+
+//                         <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+//                             <Divider orientation="vertical" sx={{height: 20, marginLeft: 4, marginRight: 4 }} />
+//                         </Slide>
+
+//                     </Box>
+//                 </Box>
+//                 <Divider sx={{ marginLeft: 0, marginRight: 0 }} />
+//             </Box>
+//             <Divider sx={{ marginLeft: .5, marginRight: 0 }} /> 
+//             */}
+
+//             <Box sx={{display: 'flex', mr: 1, justifyContent: "center", flexDirection: "column"}}>
+//                 <Box sx={{ flexGrow: 1, display: "inline-flex" }}>
+//                     <Box sx={{ display: "flex", justifyContent: "center", minWidth: "600px", width: "82vw", }} >
+//                         <Box sx={{ display: 'flex', mt: 3}}>
+//                             <Card sx={{ textAlign: "center", backgroundColor: SPECIAL_EVEN_DEEPER_QUARTZ_COLOR, borderRadius: 5, ml: 1, mr: 1, width: 900, height: 210 }} raised>
+//                                 <Divider sx={{ mt: 1, mb: 1}}/>
+//                                 <Table sx={{ ml: 2, width: "96%" }}>
+//                                     <TableBody>
+                                        
+//                                         <TableRow sx={{ borderBottom: 1}}> 
+//                                             <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
+//                                                 <Typography sx={{ mr: 2}}>Name :</Typography>
+//                                             </TableCell>
+//                                             <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
+//                                                 <Typography sx={{ mr: 1}}> {appInfo.name} </Typography>
+//                                             </TableCell>   
+//                                         </TableRow>
+
+//                                         <TableRow sx={{ borderBottom: 1}}> 
+//                                             <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
+//                                                 <Typography sx={{ mr: 2}}>Created By :</Typography>
+//                                             </TableCell>
+//                                             <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
+//                                                 <Typography sx={{ mr: 1}}> {appInfo.createdBy} </Typography>
+//                                             </TableCell>   
+//                                         </TableRow>
+
+//                                         <TableRow sx={{ borderBottom: 1}}> 
+//                                             <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
+//                                                 <Typography sx={{ mr: 2}}>Description :</Typography>
+//                                             </TableCell>
+//                                             <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
+//                                                 <Typography sx={{ mr: 1}}> {appInfo.description} </Typography>
+//                                             </TableCell>   
+//                                         </TableRow>
+                                        
+//                                         <TableRow sx={{ borderBottom: 1}}> 
+//                                             <TableCell size="small" width={"20%"} sx={{ padding: 0, fontSize: 14}}>
+//                                                 <Typography sx={{ mr: 2}}>Environments :</Typography>
+//                                             </TableCell>
+//                                             <TableCell size="small" sx={{ padding: 0, fontSize: 13}}>
+//                                                 <Typography sx={{ mr: 1}}>{appEnvironmentList}</Typography>
+//                                             </TableCell>   
+//                                         </TableRow>
+
+//                                         <TableRow> 
+//                                             <TableCell colSpan={2} size="small" width={"20%"} sx={{ padding: 0, fontSize: 14, borderBottom: 0}}>
+//                                                 <Typography sx={{ mr: 2}}>Actions</Typography>
+//                                             </TableCell>  
+//                                         </TableRow>
+
+//                                         <TableRow>
+//                                             <TableCell colSpan={2} size="small" sx={{ padding: 0, fontSize: 13, borderBottom: 0}}>
+//                                                 <Box display="flex" flexDirection="row" >
+                                                    
+//                                                     <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+//                                                         <Tooltip placement="top" title={`Update core project info & settings`}>
+//                                                             <IconButton onClick={handleProjectProfileInfo}>
+//                                                                 <BuildCircleOutlined fontSize="large" color="secondary"/>
+//                                                             </IconButton>
+//                                                         </Tooltip>
+//                                                         <Typography sx={{ }}>Edit Profile</Typography>
+//                                                     </Box>
+                                                    
+//                                                     <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+//                                                         <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
+//                                                     </Slide>
+
+//                                                     <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+//                                                         <Tooltip placement="top" title={`Edit descriptive project properties`}>
+//                                                             <span>
+//                                                                 <IconButton disabled={false} onClick={handlePropEditingAction}>
+//                                                                     <PlaylistAddCircleOutlined fontSize="large" color={"secondary"} />
+//                                                                 </IconButton>
+//                                                             </span>
+//                                                         </Tooltip>
+//                                                         <Typography sx={{ }}>Add Buckets</Typography>
+//                                                     </Box>
+
+//                                                     <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+//                                                         <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
+//                                                     </Slide>
+
+//                                                     <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+//                                                         <Tooltip placement="top" title={`Clone Project`}>
+//                                                             <IconButton onClick={handleCloneAction}>
+//                                                                 <CopyAllOutlined fontSize="large" color="secondary"/>
+//                                                             </IconButton>
+//                                                         </Tooltip>
+//                                                         <Typography sx={{ }}>Clone App</Typography>
+//                                                     </Box>
+
+//                                                     <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+//                                                         <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
+//                                                     </Slide>
+
+//                                                     <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+//                                                         <Tooltip placement="top" title={(appInfo.lockedBy && appInfo.lockedBy.length > 0) ? `Unlock Project`: `Lock Project`}>
+//                                                             <IconButton onClick={processProjectLockAndUnlock}>
+//                                                                 {(appInfo.lockedBy && appInfo.lockedBy.length > 0)
+//                                                                     ? <LockOutlined fontSize="large" sx={{ color: SPECIAL_RED_COLOR}} />
+//                                                                     : <LockOpenOutlined fontSize="large" color="secondary"/>
+//                                                                 }
+//                                                             </IconButton>
+//                                                         </Tooltip>
+//                                                         <Typography sx={{ }}>Lock App</Typography>
+//                                                     </Box>
+
+//                                                     <Slide timeout={{ enter: 800, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+//                                                         <Divider orientation="vertical" sx={{height: 50, marginLeft: 4, marginRight: 4 }} />
+//                                                     </Slide>
+
+//                                                     <Box sx={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+//                                                         <Tooltip placement="top" title={`Delete Project`}>
+//                                                             <IconButton onClick={handleProjectDeleteAction}>
+//                                                                 <DeleteForeverOutlined fontSize="large" color="secondary"/>
+//                                                             </IconButton>
+//                                                         </Tooltip>
+//                                                         <Typography sx={{ }}>Delete App</Typography>
+//                                                     </Box>
+                                                    
+//                                                 </Box>
+//                                             </TableCell>   
+//                                         </TableRow>
+
+//                                     </TableBody>
+//                                 </Table>
+//                                 <Divider sx={{ mt: 1, mb: 1}}/>
+//                             </Card>
+//                         </Box>                            
+//                     </Box>
+//                 </Box>
+            
+//                 <Box display="flex" justifyContent="center" sx={{ mb: 5, mt: 5  }}>
+//                     <Slide timeout={{ enter: 500, exit: 500 }} direction="down" in={true} container={containerRef.current}>
+//                         <Divider sx={{ width: "80%" }} />
+//                     </Slide>
+//                 </Box>
+//                 <div style={{ height: "42vh" }}>
+//                     <AgGridReact
+//                         rowData={[]}
+//                         animateRows={true}
+//                         columnDefs={columnDefs}
+//                         defaultColDef={defaultColDef}
+//                         autoGroupColumnDef={autoGroupColumnDef}
+//                         onGridReady={onGridReady}
+//                         theme={themeDarkBlue}
+//                         rowSelection={{ mode: "singleRow", checkboxes: false }}
+//                         suppressExcelExport={false}
+//                         suppressCsvExport={false}   
+//                         groupDisplayType='singleColumn'    
+//                         groupDefaultExpanded={0}
+//                     />
+//                 </div>
+//             </Box>
+//             {confirmationModalState && <ConfirmationDialog opened={confirmationModalState} close={confirmationModalActioner.close} {...confirmationDialogProps as ConfirmationDialogProps} /> }
+            
+//         </Box>
+
+
+            
+            
+//     )
+
+
+//===========================================================================
 
 
         // <Box sx={{display: 'flex', mr: 1, flexDirection: "column"}}>

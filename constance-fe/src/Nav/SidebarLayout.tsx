@@ -9,7 +9,7 @@ import intelLogo from '../assets/intel-header-logo.svg';
 import styled from '@emotion/styled';
 import LogoComp, { StyledIntelLogoImg } from "../CommonComponents/LogoComp";
 import { useTheme } from "@mui/material/styles";
-import { AspectRatio, BlurOn, GridGoldenratio, GridOnOutlined, HelpOutline, Layers, MemoryOutlined, PowerOutlined, SettingsApplicationsOutlined, TableRows, VerifiedUser, WebStoriesOutlined } from "@mui/icons-material";
+import { AspectRatio, BlurOn, CasesOutlined, GridGoldenratio, GridOnOutlined, HelpOutline, Layers, MemoryOutlined, PowerOutlined, SettingsApplicationsOutlined, TableRows, VerifiedUser, WebStoriesOutlined } from "@mui/icons-material";
 import { Person } from "@microsoft/mgt-react";
 import { RotatingLines, Triangle } from  'react-loader-spinner'
 import { ActionSceneEnum, SPECIAL_RED_COLOR } from "../DataModels/Constants";
@@ -64,22 +64,16 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
     const menuCurrentScene = useCStore((state) => state.menuCurrentScene)
     const setMenuCurrentScene = useCStore((state) => state.setMenuCurrentScene)
     const loadingSpinnerCtx = useCStore((state) => state.loadingSpinnerCtx)
-    
+    const selectedEnvironment = useCStore((state) => state.selectedEnvironment)
+
     let isUserLoggedIn = (loggedInUser && loggedInUser.email.length > 0  && loggedInUser.idsid.length > 0  && loggedInUser.wwid.length > 0) ? true : false;
 
     const projMenuItems : Array<ProjectRelatedMenuItem> = useMemo(() => (
         [
-            {key: ActionSceneEnum.APPINFO, label: "App Home", icon: <HomeOutlinedIcon />, onProjSelectionOnly: true, disabled: false},
-            {key: ActionSceneEnum.CONFIGURATIONS, label: "Configurations", icon: <SettingsApplicationsOutlined />, onProjSelectionOnly: true, disabled: false},
-            // {key: ActionSceneEnum.LAYERGROUPS, label: "Layer Groups", icon: <Layers />, onProjSelectionOnly: true, disabled: false},
-            // {key: ActionSceneEnum.DEFAULTCONSTRAINTS, label: "Default Constraints", icon: <GridGoldenratio />, onProjSelectionOnly: true, disabled: false},
-            // {key: ActionSceneEnum.RULEAREAS, label: "Rule Areas", icon: <AspectRatio />, onProjSelectionOnly: true, disabled: false},
-            // {key: ActionSceneEnum.NETS, label: "Nets", icon: <BlurOn />, onProjSelectionOnly: true, disabled: false},
-            // {key: ActionSceneEnum.INTERFACES, label: "Interfaces", icon: <MemoryOutlined />, onProjSelectionOnly: true, disabled: false},
-            // {key: ActionSceneEnum.C2CLAYOUT, label: "C2C (Clearances)", icon: <GridOnOutlined />, onProjSelectionOnly: true, disabled: false},
-            // {key: ActionSceneEnum.POWERINFO, label: "Power Info", icon: <PowerOutlined />, onProjSelectionOnly: true, disabled: false},
-            
-            // {key: ActionSceneEnum.VALIDATIONS, label: "Validations", icon: <VerifiedUser />, onProjSelectionOnly: true, disabled: true},
+            {key: ActionSceneEnum.ROOT, label: "List All", icon: <HomeOutlinedIcon />, onProjSelectionOnly: false, disabled: false},
+            {key: ActionSceneEnum.APPINFO, label: "App Home", icon: <CasesOutlined />, onProjSelectionOnly: true, disabled: false},
+            {key: ActionSceneEnum.CONFIGS, label: "Configurations", icon: <SettingsApplicationsOutlined />, onProjSelectionOnly: true,  disabled: false},
+           
             {key: ActionSceneEnum.LOGS, label: "Logs", icon: <WebStoriesOutlined />, onProjSelectionOnly: true, disabled: true},
             {key: ActionSceneEnum.FAQS, label: "FAQ", icon: <HelpOutline />, onProjSelectionOnly: false, disabled: true}
         ]
@@ -226,8 +220,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
                                     component={
                                         <Link 
                                             to={menuItem.onProjSelectionOnly 
-                                                ? `/${menuItem.key}/${currentAppInfo?._id ?? ''}${menuItem.subPath ? '/' + menuItem.subPath : ''}`
-                                                : `/${menuItem.key}`
+                                                ? `/${menuItem.key}/${selectedEnvironment}/${currentAppInfo?._id ?? ''}${menuItem.subPath ? ('/' + menuItem.subPath) : ''}`
+                                                : `${(menuItem.key === ActionSceneEnum.ROOT) ? "/list" : ("/" + menuItem.key)}`
                                             } 
                                             onClick={() => {setMenuCurrentScene(menuItem.key)}}
                                         />

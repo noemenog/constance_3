@@ -2,14 +2,15 @@
 @font-face {
   font-family: "intelone";
   src: local("intelone"),
-    url("./assets/fonts/intelone-display-light.woff2") format("woff2");
+    url("./assets/fonts/intelone-bodytext/intelone-bodytext-font-family-webfonts/intelone-bodytext-font-family-woff2/intelone-text-regular.woff2") format("woff2");
+    /* url("./assets/fonts/intelone-display-regular.woff2") format("woff2"); */
 } 
 
 
 @font-face {
-  font-family: "intelclear";   /*Can be any text*/
+  font-family: "intelclear";   
   src: local("intelclear"),
-    url("./assets/fonts/intel-clear-latin.woff2") format("woff2");
+    url("./assets/fonts/other/intelone-display-light.woff2") format("woff2");
 }
 
 
@@ -150,7 +151,7 @@ fluent-text-field .root{
 /* Mantine Tabs */
 /* ======================================================================================================*/
 .tabs {
-  margin-top: 20px;
+  margin-top: 10px;
   /* min-width: 750px; */
   /* width: 750px; */
 }

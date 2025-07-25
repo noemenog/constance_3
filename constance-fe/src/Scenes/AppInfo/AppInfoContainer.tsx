@@ -6,17 +6,17 @@ import { useLoaderData, useLocation, useNavigate, useParams } from "react-router
 import styled from "@emotion/styled";
 import { Tabs, rem } from "@mantine/core";
 import { BarChartOutlined, DownloadDoneOutlined, DownloadForOfflineOutlined, FileUploadOutlined, KeyOutlined, LeakRemoveOutlined, PlaylistAddCheckOutlined, ShortTextOutlined, SsidChartOutlined, } from "@mui/icons-material";
-import ProjectOverviewTab from "./AppInfoOverviewTab";
+import AppInfoOverviewTab from "./AppInfoOverviewTab";
 import { ActionSceneEnum } from "../../DataModels/Constants";
 import { useCStore } from "../../DataModels/ZuStore";
 import { CDomainData } from "../../DataModels/HelperModels";
 import AppInfoPermissionsTab from "./AppInfoPermissionsTab";
 
 
-interface AppInfoDetailsProps {
+interface AppInfoContainerProps {
 }
 
-const AppInfoDetails: React.FC<AppInfoDetailsProps> = () => {
+const AppInfoContainer: React.FC<AppInfoContainerProps> = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const navigate = useNavigate();
@@ -57,7 +57,7 @@ const AppInfoDetails: React.FC<AppInfoDetailsProps> = () => {
 
 
                 <Tabs.Panel value="overview">
-                    <ProjectOverviewTab />
+                    <AppInfoOverviewTab />
                 </Tabs.Panel>
 
                 <Tabs.Panel value="permissions">
@@ -72,4 +72,4 @@ const AppInfoDetails: React.FC<AppInfoDetailsProps> = () => {
 
 }
 
-export default AppInfoDetails
+export default AppInfoContainer

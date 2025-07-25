@@ -99,7 +99,7 @@ export const tokens = (mode : any) => ({
 //mui theme settings
 export const themeSettings = (mode: any) => {
     const colors = tokens(mode);
-
+    const fontName = "intelclear"
     return {
         palette: {
             mode: mode,
@@ -139,33 +139,33 @@ export const themeSettings = (mode: any) => {
             ),
         },
         typography: {
-            fontFamily: ["intelclear"].join(","),
+            fontFamily: [fontName].join(","),
             fontSize: 12,
             // allVariants: {
             //     color: "#ffffff"
             // },
             h1: {
-                fontFamily: ["intelclear"].join(","),
+                fontFamily: [fontName].join(","),
                 fontSize: 40,
             },
             h2: {
-                fontFamily: ["intelclear"].join(","),
+                fontFamily: [fontName].join(","),
                 fontSize: 32,
             },
             h3: {
-                fontFamily: ["intelclear"].join(","),
+                fontFamily: [fontName].join(","),
                 fontSize: 24,
             },
             h4: {
-                fontFamily: ["intelclear"].join(","),
+                fontFamily: [fontName].join(","),
                 fontSize: 20,
             },
             h5: {
-                fontFamily: ["intelclear"].join(","),
+                fontFamily: [fontName].join(","),
                 fontSize: 16,
             },
             h6: {
-                fontFamily: ["intelclear"].join(","),
+                fontFamily: [fontName].join(","),
                 fontSize: 14,
             },
         }

@@ -43,9 +43,9 @@ const AppInfoPermissionsTab: React.FC<AppInfoPermissionsTabProps> = ({  }) => {
 
 
 
-    // useEffect(() => {
-    //     placePageTitle("ProjectPermissions")
-    // }, []);
+    useEffect(() => {
+        placePageTitle("AppPermissions")
+    }, []);
 
     
     // useEffect(() => {

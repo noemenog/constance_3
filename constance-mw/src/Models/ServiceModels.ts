@@ -43,15 +43,31 @@ export interface Bucket extends ServiceModel {
 
 export interface ConfigItem extends ServiceModel {
     name: string;
-    value: any;
     bucketId: string;
     description: string;
     contentType: ConfigContentTypeEnum;
+    value: any;
     createdOn: Date;
     createdBy: string;
     associatedProperties: PropertyItem[];
 }
 
+
+export interface ConfigHistory extends ServiceModel {
+    configItemId: string;
+    changes: ConfigChangeInstance[];
+}
+
+
+export interface ConfigChangeInstance extends ServiceModel {
+    index: number;
+    description: string;
+    contentType: ConfigContentTypeEnum;
+    value: any; 
+    timeStamp: Date;
+    user: User;
+    tags: string[];
+}
 
 //===================================================================================
 //========================== SNAPSHOT CONTEXT =======================================

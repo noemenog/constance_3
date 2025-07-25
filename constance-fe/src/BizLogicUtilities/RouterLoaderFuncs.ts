@@ -119,7 +119,7 @@ export async function appInfoDetailsLoader(request: Request, params: Params) : P
 
 
 export async function bucketConfigLoader(request: Request, params: Params) : Promise<CDomainData|null> {
-    let domainData = await handleTheBasics(params.projectId as string, ActionSceneEnum.CONFIGURATIONS)
+    let domainData = await handleTheBasics(params.projectId as string, ActionSceneEnum.CONFIGS)
     
     // let interfaceList = await fetchInterfaceList(params.projectId as string) ?? []
     // domainData.interfaceList = interfaceList

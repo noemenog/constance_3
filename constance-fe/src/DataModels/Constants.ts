@@ -60,7 +60,7 @@ export enum ErrorSeverityValue {
 export enum ActionSceneEnum {
     ROOT = "root",
     APPINFO = "app",
-    CONFIGURATIONS = "configs",
+    CONFIGS = "configs",
     COMPARE = "compare",
     LOGS = "logs",
     FAQS = "faq",
