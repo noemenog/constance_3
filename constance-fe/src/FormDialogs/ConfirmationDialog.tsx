@@ -9,7 +9,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { SPECIAL_RED_COLOR } from '../DataModels/Constants';
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
-import { BasicKVP } from '../DataModels/HelperModels';
+import { BasicKVP } from '../DataModels/ServiceModels';
 import { SpButton } from '../CommonComponents/SimplePieces';
 
 

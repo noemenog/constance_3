@@ -5,11 +5,11 @@ import { useTheme } from "@mui/material/styles";
 import { useLoaderData, useLocation, useNavigate, useParams } from "react-router-dom";
 import styled from "@emotion/styled";
 import { Tabs, rem } from "@mantine/core";
-import { BarChartOutlined, DownloadDoneOutlined, DownloadForOfflineOutlined, FileUploadOutlined, KeyOutlined, LeakRemoveOutlined, PlaylistAddCheckOutlined, ShortTextOutlined, SsidChartOutlined, } from "@mui/icons-material";
+import { KeyOutlined, PlaylistAddCheckOutlined } from "@mui/icons-material";
 import AppInfoOverviewTab from "./AppInfoOverviewTab";
 import { ActionSceneEnum } from "../../DataModels/Constants";
 import { useCStore } from "../../DataModels/ZuStore";
-import { CDomainData } from "../../DataModels/HelperModels";
+import { CDomainData } from "../../DataModels/ServiceModels";
 import AppInfoPermissionsTab from "./AppInfoPermissionsTab";
 
 
@@ -42,7 +42,7 @@ const AppInfoContainer: React.FC<AppInfoContainerProps> = () => {
                 orientation="horizontal" 
                 keepMounted={false} 
                 value={tabInfo}
-                onChange={ (value) => navigate(`/${ActionSceneEnum.APPINFO}/${selectedEnvironment}/${appId}/${value || ''}`) }>
+                onChange={ (value) => navigate(`/${ActionSceneEnum.APPHOME}/${appId}/${value || ''}`) }>
                 
                 <Tabs.List variant={"pills"} justify="left">
                     <Tabs.Tab value="overview"  ref={overviewTabRef} leftSection={<PlaylistAddCheckOutlined style={iconStyle} />}>

@@ -8,13 +8,14 @@ import { Modal } from '@mantine/core';
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
 import { BASIC_NAME_VALIDATION_REGEX, MIN_DESCRIPTION_LENGTH, SPECIAL_DARKMODE_TEXTFIELD_COLOR, SPECIAL_DEEPER_QUARTZ_COLOR, SPECIAL_RED_COLOR, UIMessageType } from '../DataModels/Constants';
-import { BasicKVP, DisplayOption } from '../DataModels/HelperModels';
+import { BasicKVP, DisplayOption } from '../DataModels/ServiceModels';
 import { Fragment, useState } from 'react';
 import { keyBy } from 'lodash';
 import { rfdcCopy } from '../BizLogicUtilities/UtilFunctions';
 import { useCStore } from '../DataModels/ZuStore';
-import { MultiRegexCollection } from '../CommonComponents/MultiRegexCollection';
 import { SpButton } from '../CommonComponents/SimplePieces';
+import { MultiRegexCollection } from '../CommonComponents/MultiRegexCollection';
+import { MultiTextEntryField } from '../CommonComponents/MultiTextEntryField';
 
 
 
@@ -69,16 +70,17 @@ export interface GeneralInfoDialogProps {
     largeTextAreaMinCharLength?: number,
     largeTextAreaValueRequired?: boolean,
     enableFormSubmitOnEnterKey?: boolean,
+
     contextualInfo: any
 }
 
 const GeneralInfoDialog: React.FC<GeneralInfoDialogProps> = ({ title, warningText, opened, close, onFormClosed,
     selectionCtrlOptions, selectionDefaultValue, textMainDefaultValue, textOtherDefaultValue, largeTextDefaultValue, booleanValueDefaultValue, 
     mapperItems, selectionLabel, secondarySelectionLabel, textMainLabel, textOtherLabel, largeTextLabel, booleanValueLabel, largeTextAreaMinCharLength, 
-    largeTextAreaValueRequired, regexExpressionCollectorTitle, regexExprDefaultValues, contextualInfo, enableFormSubmitOnEnterKey = true,
-
-    showTextMainCtrl = false, showTextOtherCtrl = false, showLargeTextCtrl = false, showSelectionCtrl = false, showBooleanValueCtrl = false, 
-    showMapperCtrl = false, showRegexExpressionCollector = false, showSecondarySelection = false
+    largeTextAreaValueRequired, regexExpressionCollectorTitle, regexExprDefaultValues, contextualInfo, 
+    
+    enableFormSubmitOnEnterKey = true, showTextMainCtrl = false, showTextOtherCtrl = false, showLargeTextCtrl = false, showSelectionCtrl = false, showBooleanValueCtrl = false, 
+    showMapperCtrl = false, showRegexExpressionCollector = false, showSecondarySelection = false,
  }) => {
     
     const theme = useTheme();
@@ -88,7 +90,6 @@ const GeneralInfoDialog: React.FC<GeneralInfoDialogProps> = ({ title, warningTex
     
     const [mapperSelections, setMapperSelections] = useState<Map<string, string>>(new Map<string, string>());
     const [regExprData, setRegExprData] = useState<BasicKVP[]>(regexExprDefaultValues ?? []);
-
     const [secondarySelectionOptions, setSecondarySelectionOptions] = useState<string[]>([]);
 
     const seperationSpace = 3
@@ -123,6 +124,7 @@ const GeneralInfoDialog: React.FC<GeneralInfoDialogProps> = ({ title, warningTex
                 }
             }
         }
+
         let giContext : GeneralInfoUIContext = {
             textMain: data.textMainField,
             textOther: data.textOtherField,
@@ -176,8 +178,7 @@ const GeneralInfoDialog: React.FC<GeneralInfoDialogProps> = ({ title, warningTex
     }
 
 
-
-
+    
 
     return (
         <Box>

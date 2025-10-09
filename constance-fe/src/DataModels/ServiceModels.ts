@@ -1,5 +1,4 @@
-import { ConfigContentTypeEnum } from "./Constants";
-import { BaseUserInfo, BasicKVP, BasicProperty, EditorNotesData, PropertyItem, User } from "./HelperModels";
+import { ActionSceneEnum, ConfigContentTypeEnum, EnvTypeEnum, ErrorSeverityValue, UIMessageType } from "./Constants";
 
 
 
@@ -51,24 +50,183 @@ export interface ConfigItem extends ServiceModel {
     associatedProperties: PropertyItem[];
 }
 
+
+export interface ConfigChangeHistory extends ServiceModel {
+    configItemId: string;
+    bucketId: string;
+    changes: ConfigChangeInstance[];
+}
+
+
+export interface ConfigChangeInstance {
+    index: number;
+    contentType: ConfigContentTypeEnum;
+    value: any; 
+    timeStamp: Date;
+    user: string;
+    tags: string[];
+}
+
+
+
+//=================================================================================================================================
+//========================================================== OTHER ================================================================
+//=================================================================================================================================
+
+
+
+
+export interface CDomainData {
+    appInfoCollection: AppInfo[];
+    appInfo : AppInfo | null;
+    bucketList : Bucket[];
+    configList: ConfigItem[];
+    selectedConfig: ConfigItem | null;
+    currentEnv: EnvTypeEnum | null;
+    destEnv : EnvTypeEnum | null;
+}
+
+
+
+export interface BaseUserInfo {
+    email: string,
+    idsid: string
+}
+
+export interface User extends BaseUserInfo {
+    id: string,
+    wwid: string
+}
+
+
+export interface LoggedInUser extends User {
+    perms: Map<string, string>,
+    givenName: string,
+    surname: string
+}
+
+
 //===================================================================================
-//========================== SNAPSHOT CONTEXT =======================================
-// export interface SnapshotContext extends ServiceModel  {
-//     name: string;
-//     enabled: boolean;
-//     components: string[];
+//========================== PROPERTY =======================================
+export interface Identifiable {
+    id: string;
+}
+
+export interface BasicProperty extends Identifiable {
+    name: string;
+    value: any;
+}
+
+export interface PropertyItem extends BasicProperty {
+    category: string;
+    displayName: string;
+    editable: boolean;
+    enabled: boolean;
+    contextProperties?: BasicProperty[];
+}
+
+export interface BasicKVP {
+    key: string;
+    value: any;
+}
+
+//===================================================================================
+//========================== API RESPONSE DATA ======================================
+export interface ResponseData {
+    payload: any;
+    error: ErrorData;
+}
+
+export interface ErrorData {
+    id: string;
+    code: string;
+    severity: ErrorSeverityValue;
+    message: string;
+}
+
+
+
+//===================================================================================
+//========================== OTHER DATA ======================================
+
+export class StringBuilder {
+    private lines: string[] = [];
+
+    append(line: string = ""): void {
+        this.lines.push(line);
+    }
+
+    appendLine(line: string = ""): void {
+        this.lines.push(line);
+        this.lines.push("\n");
+    }
+
+    toString(): string {
+        return this.lines.join("");
+    }
+}
+
+
+// export interface ActionPermissionContext {
+//     id: string,
+//     category: ActionSceneEnum,
+//     name: PermissionActionEnum, 
+//     enabled: boolean,
+//     enabledRoles: Set<string>
 // }
 
 
+export interface QuickStatus<T> {
+    isSuccessful: boolean,
+    message: string, 
+    data?: T
+}
 
-// //===================================================================================
-// //========================== CHANGE TRACKER CONTEXT =======================================
-// export interface ChangeContext extends ServiceModel {
-//     uniqueId: string,  //itemId
-//     tags: string[],
-//     data: any;
-//     diffContext: { time: Date, agent: string, delta: any }[],
-// }
+
+//===================================================================================
+//========================== UI FOCUSED ITEMS ======================================
+
+
+export interface MenuInfo {
+    label: string,
+    icon: React.ReactNode,
+    callbackAction?: (contextualInfo: BasicKVP) => void,
+    indicateWarning?: boolean,
+    contextualInfo?: BasicKVP
+}
+
+export interface ProjectRelatedMenuItem extends MenuInfo{
+    key: ActionSceneEnum, 
+    subPath?: string,
+    onProjSelectionOnly: boolean, 
+    envBased: boolean,
+    disabled: boolean
+}
+
+export interface SnackBarData {
+    type?: UIMessageType;
+    msg: string;
+}
+
+export interface LoadingSpinnerInfo {
+    enabled: boolean,
+    text: string
+}
+
+export interface DisplayOption {
+    id: string;
+    label: string;
+    type?: string
+}
+
+export interface PageConfInfo {
+    key: string, 
+    scene: string, 
+    title: string, 
+    subtitle: string
+}
+
+
 
 
 

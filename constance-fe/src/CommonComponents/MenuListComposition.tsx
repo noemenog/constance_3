@@ -13,7 +13,7 @@ import { Settings, SettingsOutlined, SvgIconComponent, Thunderstorm, Visibility,
 import { SPECIAL_BLUE_COLOR, SPECIAL_DARK_GOLD_COLOR, SPECIAL_DARKMODE_TEXTFIELD_COLOR, SPECIAL_DEEPER_QUARTZ_COLOR, SPECIAL_QUARTZ_COLOR, SPECIAL_RED_COLOR } from '../DataModels/Constants';
 import { Fragment } from 'react';
 import { tokens } from '../theme';
-import { BasicKVP, MenuInfo } from '../DataModels/HelperModels';
+import { BasicKVP, MenuInfo } from '../DataModels/ServiceModels';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 
 
@@ -86,31 +86,33 @@ const MenuListComposition: React.FC<MenuListCompositionProps> = ({ menuItems, ic
         <Box sx={{ ml: 1, mr: 1, zIndex: 10 }}>
             <div>
                 <Tooltip placement="top" title={tooltipTitle}>
-                    <IconButton 
-                        ref={anchorRef}
-                        id="composition-button"
-                        aria-controls={open ? 'composition-menu' : undefined}
-                        aria-expanded={open ? 'true' : undefined}
-                        aria-haspopup="true"
-                        disableRipple={disableRipple}
-                        sx={{
-                            padding: padding,
-                            backgroundColor: disableRipple ? undefined : SPECIAL_DARKMODE_TEXTFIELD_COLOR,
-                            "@keyframes rotate": {
-                                "0%": {
-                                    transform: "rotate(0deg)",
+                    <span>
+                        <IconButton 
+                            ref={anchorRef}
+                            id="composition-button"
+                            aria-controls={open ? 'composition-menu' : undefined}
+                            aria-expanded={open ? 'true' : undefined}
+                            aria-haspopup="true"
+                            disableRipple={disableRipple}
+                            sx={{
+                                padding: padding,
+                                backgroundColor: disableRipple ? undefined : SPECIAL_DARKMODE_TEXTFIELD_COLOR,
+                                "@keyframes rotate": {
+                                    "0%": {
+                                        transform: "rotate(0deg)",
+                                    },
+                                    "100%": {
+                                        transform: "rotate(520deg)",
+                                    },
                                 },
-                                "100%": {
-                                    transform: "rotate(520deg)",
-                                },
-                            },
-                            animation: (disableAnimation === true) ? undefined : "rotate 1s"
-                        }}
-                        
-                        disabled={disabled}
-                        onClick={handleToggle}>
-                        {(icon) ? <>{icon}</> : <SettingsOutlined sx={{padding: 0}} fontSize={iconSize} color="secondary"/>}
-                    </IconButton>
+                                animation: (disableAnimation === true) ? undefined : "rotate 1s"
+                            }}
+                            
+                            disabled={disabled}
+                            onClick={handleToggle}>
+                            {(icon) ? <>{icon}</> : <SettingsOutlined sx={{padding: 0}} fontSize={iconSize} color="secondary"/>}
+                        </IconButton>
+                    </span>
                 </Tooltip>
 
                 <Popper open={open} anchorEl={anchorRef.current} role={undefined} placement="bottom-start" transition disablePortal>

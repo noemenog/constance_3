@@ -77,11 +77,11 @@ export default function Error404Page() {
   console.error(error);
 
   return (
-    <div id="error-page">
+    <div id="error-page" style={{ marginLeft: 20 }}>
       <h1>Oops!</h1>
       <p>Sorry, an unexpected error has occurred.</p>
       <p>
-        <i>{error.statusText || error.message}</i>
+        <i style={{fontWeight: "bold", color: "darkred"}}>{error.statusText || error.message}</i>
       </p>
     </div>
   );

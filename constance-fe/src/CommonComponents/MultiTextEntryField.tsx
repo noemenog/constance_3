@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Alert, Box, Divider, Grid, IconButton, SxProps, TextField, Theme } from '@mui/material';
 import { AddCircle } from '@mui/icons-material';
-import { DisplayOption } from '../DataModels/HelperModels';
+import { DisplayOption } from '../DataModels/ServiceModels';
 import { useTheme } from "@mui/material/styles";
 import { tokens } from '../theme';
 
@@ -67,9 +67,9 @@ export const MultiTextEntryField: React.FC<MultiTextEntryFieldProps> = ({
 
 
     return (
-        <Box>
+        <Box width={"100%"}>
             <div>
-                <Box sx={{display: "flex", flexDirection: "row"}}>
+                <Box sx={{display: "flex", flexDirection: "row", width: "100%"}}>
                     
                     <TextField
                         disabled={disabled}
@@ -79,7 +79,7 @@ export const MultiTextEntryField: React.FC<MultiTextEntryFieldProps> = ({
                         variant="outlined"
                         size={"small"}
                         onChange={(e: any) => setTextFieldValue(e.target.value)}
-                        sx={textFieldStyle ?? { m: 1, width:"100%",  backgroundColor: "white", }}
+                        sx={textFieldStyle ?? { m: 1, width:"100%", backgroundColor: "white" }}
                         onKeyDown={(event) => {
                             handleKeyDowwn(event);
                         }} 

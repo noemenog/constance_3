@@ -26,20 +26,6 @@ body,
   /* font-family: 'Source Sans Pro', sans-serif; */
 }
 
-.ag-theme-alpine-dark, .ag-theme-alpine {
-  --ag-font-size: 13px !important;
-}
-.ag-cell {
-  /* background-color: #2244CC44; */
-  font-size: 13px;
-}
-
-.ag-align-center-header .ag-header-cell-label {
-  align-items: center;
-  justify-content: center;
-}
-
-
 .app {
   display: flex;
   position: relative;
@@ -64,6 +50,64 @@ body,
 ::-webkit-scrollbar-track:hover{
   background: #555
 }
+
+
+
+
+
+
+
+/* ======================================================================================================*/
+/* AG GRID */
+/* ======================================================================================================*/
+
+.ag-theme-alpine-dark, .ag-theme-alpine {
+  --ag-font-size: 13px !important;
+}
+
+.ag-cell {
+  /* background-color: #2244CC44; */
+  font-size: 13px;
+}
+
+.ag-align-center-header .ag-header-cell-label {
+  align-items: center;
+  justify-content: center;
+}
+
+#applist-detail-grid .ag-details-grid {
+    background-color: #e6b800;
+    padding: 1px;
+    
+    max-width: 100%;
+    width: 60%;
+}
+
+@media (max-width: 1200px) {
+  #applist-detail-grid .ag-details-grid {
+    width: 80%;
+  }
+}
+
+@media (max-width: 800px) {
+  #applist-detail-grid .ag-details-grid {
+    width: 90%;
+  }
+}
+/* @media (max-width: 800px) {
+  #applist-detail-grid .ag-details-grid {
+    width: 80%;
+  }
+} */
+
+@media (max-width: 700px) {
+  #applist-detail-grid .ag-details-grid {
+    width: 100%;
+  }
+}
+
+/* width: 700px !important; */
+    /* min-width: 70%; */
 
 
 
@@ -109,7 +153,7 @@ body,
 
   --people-picker-no-results-text-color: #efefef;
   
-  --people-picker-input-background: #909090;
+  --people-picker-input-background: #266daec0;
   --people-picker-input-border-color: #c6c6c6;
   --people-picker-input-hover-background: #c0c0c0;
   --people-picker-input-hover-border-color: #1f2a40;
@@ -129,7 +173,7 @@ body,
   --people-picker-selected-person-avatar-size: 30px;
 
   /** You can also change the person tokens **/
-  --person-line1-text-color: #e0e0e0;
+  --person-line1-text-color: #ffffff;
   --person-line2-text-color: #70d8bd;
 }
 
@@ -262,3 +306,10 @@ fluent-text-field .root{
   cursor: pointer;
 }
 
+
+/* 
+.appSidebar {
+  width: 100%;
+  height: auto;
+  transition: height 1.9s ease;
+} */

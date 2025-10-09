@@ -1,13 +1,13 @@
 import { Params, redirect } from "react-router";
 import { ActionSceneEnum, CONFIGITEM__Page_Title_Settings, EnvTypeEnum, ErrorSeverityValue } from "../DataModels/Constants";
 import { useCStore } from "../DataModels/ZuStore";
-import { BasicProperty, ConfigItem, PropertyItem, CDomainData, User } from "../DataModels/HelperModels";
+import { BasicProperty, ConfigItem, PropertyItem, CDomainData, User, Bucket } from "../DataModels/ServiceModels";
 import { performBackendCall, rfdcCopy, sortByLastUpdatedDate, verifyNaming } from "./UtilFunctions";
-import { LoadingSpinnerInfo, LoggedInUser, PageConfInfo } from "../DataModels/HelperModels";
+import { LoadingSpinnerInfo, LoggedInUser, PageConfInfo } from "../DataModels/ServiceModels";
 // import { getApproverWGName, getPreloadPermissions, loadAWGStatusForLoggedInUser } from "./Permissions";
 import { DisplayError } from "../CommonComponents/ErrorDisplay";
 import { sort } from "fast-sort";
-import { fetchAppDetails, fetchAppList, fetchInitConfigs } from "./FetchData";
+import { fetchAppDetails, fetchAppList, fetchInitConfigs, getBucketList } from "./FetchData";
 import { loadAWGStatusForLoggedInUser } from "./Permissions";
 
 
@@ -18,7 +18,6 @@ export async function handleTheBasics(appId: string|null, scene: ActionSceneEnum
         appInfoCollection: [],
         appInfo: null,
         bucketList: [],
-        selectedBucket: null,
         configList: [],
         selectedConfig: null,
         currentEnv: null,
@@ -46,7 +45,7 @@ export async function handleTheBasics(appId: string|null, scene: ActionSceneEnum
             throw redirect(`/list`)
         }
 
-        store.setCurrentAppInfo(domainData.appInfo)
+        store.setCurrentAppBasicInfo(domainData.appInfo)
 
         // let permissionRoles : BasicProperty[] = domainData.project?.associatedProperties?.find(a => (
         //     a.category === ProjectPropertyCategoryEnum.PERMISSION_ROLES && a.name === ProjectPropertyCategoryEnum.PERMISSION_ROLES))?.value ?? [] 
@@ -60,7 +59,8 @@ export async function handleTheBasics(appId: string|null, scene: ActionSceneEnum
                 store.setInitConfigs(confs)
                 store.setMenuCurrentScene(scene); //Important! - This sets the default unless changed by configuration data (triggered in each page)
 
-                let pageConfs : PageConfInfo[] = confs.find(a => a.configName === CONFIGITEM__Page_Title_Settings)?.configValue ?? []
+                let pageConfs : PageConfInfo[] = confs.find(a => a.name === CONFIGITEM__Page_Title_Settings)?.value 
+                    ?? (confs.find((a:any) => a.configName === CONFIGITEM__Page_Title_Settings) as any)?.configValue ?? []  //TODO: remove the deprecated configValue usage
                 let map: Map<string, PageConfInfo> = new Map();
                 pageConfs.forEach(pc => { map.set(pc.key.toLowerCase(), pc); });
 
@@ -82,10 +82,10 @@ export async function appInfoListLoader(request: Request, params: Params) : Prom
     let forceGetConfig = (!store.initConfigs || (store.initConfigs.length === 0)) ? true : false;
     domainData = await handleTheBasics(null, ActionSceneEnum.ROOT, forceGetConfig)
     
-    let appList = await fetchAppList(EnvTypeEnum.DEVELOPMENT) ?? [];  //Always from dev
+    let appList = await fetchAppList(EnvTypeEnum.DEVELOPMENT) ?? [];  //Always from dev!!!
     domainData.appInfoCollection = appList;
 
-    store.setCurrentAppInfo(domainData.appInfo) //domainData.project is set by handleTheBasics()
+    store.setCurrentAppBasicInfo(domainData.appInfo) //domainData.project is set by handleTheBasics()
     return domainData
 }
 
@@ -95,7 +95,8 @@ export async function appInfoDetailsLoader(request: Request, params: Params) : P
     const store = useCStore.getState(); 
     
     if (!params.tabInfo || (params.tabInfo.length === 0)) {
-        throw redirect(`/${ActionSceneEnum.APPINFO}/${store.selectedEnvironment}/${params.appId}/overview`)
+        // throw redirect(`/${ActionSceneEnum.APPINFO}/${store.selectedEnvironment}/${params.appId}/overview`)
+        throw redirect(`/${ActionSceneEnum.APPHOME}/${params.appId}/overview`)
     }
     else if (params.tabInfo) {
         if (params.tabInfo && (params.tabInfo.toLowerCase().trim() === "overview") ) { 
@@ -103,39 +104,49 @@ export async function appInfoDetailsLoader(request: Request, params: Params) : P
             let refreshConfigs = (
                 store.initConfigs 
                 && store.initConfigs.length > 0 
-                && store.currentAppInfo 
-                && store.currentAppInfo._id 
-                && store.currentAppInfo._id.toString() === params.appId
+                && store.currentAppBasicInfo 
+                && store.currentAppBasicInfo.id 
+                && store.currentAppBasicInfo.id === params.appId
             ) ? false : true;
 
-            domainData = await handleTheBasics(params.appId as string, ActionSceneEnum.APPINFO, refreshConfigs)
+            domainData = await handleTheBasics(params.appId as string, ActionSceneEnum.APPHOME, refreshConfigs)
         }
         else {
-            domainData = await handleTheBasics(params.projectId as string, ActionSceneEnum.APPINFO)
+            domainData = await handleTheBasics(params.appId as string, ActionSceneEnum.APPHOME)
         }
+
+        let buckets = await getBucketList(store.selectedEnvironment, params.appId as string) ?? []
+        domainData.bucketList = buckets;
     }
     return domainData
 }
 
 
 export async function bucketConfigLoader(request: Request, params: Params) : Promise<CDomainData|null> {
-    let domainData = await handleTheBasics(params.projectId as string, ActionSceneEnum.CONFIGS)
+    const store = useCStore.getState(); 
+    let domainData = await handleTheBasics(params.appId as string, ActionSceneEnum.CONFIGURATIONS)
     
-    // let interfaceList = await fetchInterfaceList(params.projectId as string) ?? []
-    // domainData.interfaceList = interfaceList
+    store.setLoadingSpinnerCtx({enabled: true, text: "Retrieving list of buckets for current app. Please wait..."} as LoadingSpinnerInfo)
+    let buckets = (await getBucketList(store.selectedEnvironment, params.appId as string).finally(() => { store.cancelLoadingSpinnerCtx()  })) ?? []
+    domainData.bucketList = buckets;
 
-    // let pkg = await getPkgLayout(params.projectId as string);
-    // domainData.packageLayout = pkg
-
+    if(params.bucketId && (params.bucketId.length > 0) && (buckets.length > 0)) {
+        let paramBK = buckets.find(a => (a._id.toUpperCase().trim() === params.bucketId?.toUpperCase()?.trim()))
+        if(paramBK && paramBK._id) {
+            store.setSelectedBucket(paramBK);
+        }
+    }
+    
     return domainData
 }
 
 
 export async function comparisonLoader(request: Request, params: Params) : Promise<CDomainData|null> {
+    const store = useCStore.getState(); 
     let domainData = await handleTheBasics(params.projectId as string, ActionSceneEnum.COMPARE)
-
-    // let pkg = await getPkgLayout(params.projectId as string);
-    // domainData.packageLayout = pkg
+    
+    let buckets = await getBucketList(store.selectedEnvironment, params.appId as string) ?? []
+    domainData.bucketList = buckets;
 
     return domainData
 }
@@ -149,10 +160,7 @@ export async function logsLoader(request: Request, params: Params) : Promise<CDo
     return null
 }
 
-export async function faqLoader(request: Request, params: Params) : Promise<CDomainData|null> {
-    console.log("hello world9")
-    return null
-}
+
 
 export async function baseRouteLoader(request: Request, params: Params) {
     //Do nothing here for now...

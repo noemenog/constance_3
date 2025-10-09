@@ -1,14 +1,14 @@
 import axios from "axios";
 import { getDateAppendedName, getEnvContext, isNotNullOrEmptyOrWS, performBackendCall } from "./UtilFunctions";
-import { AppInfo } from "../DataModels/ServiceModels";
-import { BasicKVP, BasicProperty, ConfigItem, EditorNotesData, PropertyItem, StatusIndicatorItem, StorageCollateralInfo } from "../DataModels/HelperModels";
-import { LoggedInUser, QuickStatus } from "../DataModels/HelperModels";
-import { AGS_APP_ACCESS_ENTITLEMENT, AGS_APP_IAPM_NUMBER, AGS_APP_NAME, AGS_APP_OWNER_WG, EnvTypeEnum, ErrorSeverityValue, MLCR_AUTH_AGS_URL, MLCR_AUTH_AGS_URL_V2 } from "../DataModels/Constants";
+import { AppInfo, Bucket } from "../DataModels/ServiceModels";
+import { BasicKVP, BasicProperty, ConfigItem } from "../DataModels/ServiceModels";
+import { LoggedInUser, QuickStatus } from "../DataModels/ServiceModels";
+import { AGS_APP_ACCESS_ENTITLEMENT, AGS_APP_IAPM_NUMBER, AGS_APP_NAME, AGS_APP_OWNER_WG, EnvTypeEnum, ErrorSeverityValue, MLCR_AUTH_AGS_URL_V2 } from "../DataModels/Constants";
 import { FileWithPath } from "@mantine/dropzone";
 import { Providers } from "@microsoft/mgt-react";
-import { getApproverWGName } from "./Permissions";
 import { DisplayError } from "../CommonComponents/ErrorDisplay";
 import { sort } from "fast-sort";
+import { getApproverWGName } from "./Permissions";
 
 
 
@@ -38,7 +38,6 @@ export async function fetchAppList(env: EnvTypeEnum) {
     return resp;
 }
 
-
 export async function fetchAppDetails(env: EnvTypeEnum, appId: string, includeBuckets: boolean): Promise<any> {
     let appInfoUrl: string = `${getEnvContext().mainAPIUrl}/${env}/appinfo/get-details?appId=${appId}&includeBuckets=${includeBuckets.toString()}`;
     let resp = await performBackendCall(appInfoUrl, "GET", null);
@@ -57,7 +56,7 @@ export async function updateAppInfo(env: EnvTypeEnum, appInfo: AppInfo): Promise
     return resp;
 }
 
-export async function deleteAppInfo(env: EnvTypeEnum, appInfo: AppInfo, delEnv?: EnvTypeEnum): Promise<boolean> {
+export async function deleteAppInfo(env: EnvTypeEnum, appInfo: AppInfo, delEnv: string): Promise<EnvTypeEnum[]> {
     let url: string = `${getEnvContext().mainAPIUrl}/${env}/appinfo/delete?appId=${appInfo._id.toString()}&delEnv=${delEnv}`;
     let resp = await performBackendCall(url, "DELETE", appInfo);
     return resp;
@@ -70,601 +69,98 @@ export async function manageAppInfoLock(env: EnvTypeEnum, appId: string, loggedI
     return resp;
 }
 
+export async function exportAll(env: EnvTypeEnum, appId: string, source: EnvTypeEnum, dest: EnvTypeEnum): Promise<boolean> {
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/export-all?appId=${appId}&src=${source}&dest=${dest}`;
+    let resp = await performBackendCall(url, "POST", null);
+    return resp;
+}
+
+
+export async function cloneAppInfo(env: EnvTypeEnum, appId: string, newName: string): Promise<AppInfo> {
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/clone?appId=${appId}&newName=${newName}`;
+    let resp = await performBackendCall(url, "POST", null);
+    return resp;
+}
 
 
 
 
+//#region buckets
+//================================= BUCKETS ============================================
+
+export async function getBucketList(env: EnvTypeEnum, appId: string): Promise<Bucket[]> {
+    //___PERM___ if (isUserApprovedForCoreAction(loggedInUser, appInfo, PermissionActionEnum.CLONE_APPINFO) === false) { return; }
+    //if user does not have access to bucket (env + bucket access), return empty array
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/buckets/get-list?appId=${appId}`;
+    let resp = await performBackendCall(url, "GET", null);
+    return resp;
+}
 
 
-//#region snapshots
-//================================= SNAPSHOTS ============================================
-// export async function getSnapshots(projectId: string, excludeConponentEntries: boolean): Promise<SnapshotContext[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/snapshot/get-snapshots?projectId=${projectId}&excludeConponentEntries=${excludeConponentEntries.toString()}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
+export async function addBucketList(env: EnvTypeEnum, bucketList: Bucket[]): Promise<Bucket[]> {
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/buckets/add`;
+    let resp = await performBackendCall(url, "POST", bucketList);
+    return resp;
+}
 
-// export async function createSnapshots(snapshotContext: SnapshotContext): Promise<SnapshotContext[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/snapshot/create-snapshot`;
-//     let resp = await performBackendCall(url, "POST", snapshotContext);
-//     return resp;
-// }
+export async function updateBucket(env: EnvTypeEnum, bucket: Bucket): Promise<Bucket> {
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/buckets/update`;
+    let resp = await performBackendCall(url, "POST", bucket);
+    return resp;
+}
 
-// export async function restoreSnapshots(snapshotContext: SnapshotContext): Promise<SnapshotContext[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/snapshot/restore-snapshot`;
-//     let resp = await performBackendCall(url, "POST", snapshotContext);
-//     return resp;
-// }
+export async function deleteBucket(env: EnvTypeEnum, bucket: Bucket, delEnv: string): Promise<EnvTypeEnum[]> {
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/buckets/delete?bucketId=${bucket._id.toString()}&delEnv=${delEnv}`;
+    let resp = await performBackendCall(url, "DELETE", bucket);
+    return resp;
+}
 
-// export async function deleteSnapshots(snapshotContextList: Array<SnapshotContext>): Promise<SnapshotContext[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/snapshot/delete-snapshot`;
-//     let resp = await performBackendCall(url, "DELETE", snapshotContextList);
-//     return resp;
-// }
+export async function exportBucket(env: EnvTypeEnum, bucketId: string, source: EnvTypeEnum, dest: EnvTypeEnum): Promise<boolean> {
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/export-bucket?bucketId=${bucketId}&src=${source}&dest=${dest}`;
+    let resp = await performBackendCall(url, "POST", null);
+    return resp;
+}
+
+export async function cloneBucket(env: EnvTypeEnum, bucketId: string, newName: string): Promise<Bucket> {
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/clone?bucketId=${bucketId}&newName=${newName}`;
+    let resp = await performBackendCall(url, "POST", null);
+    return resp;
+}
+// //#endregion
+
+
+
+//#region configItems
+//================================= CONFIGITEMS ============================================
+
+export async function getConfigList(env: EnvTypeEnum, appId: string, bucketId: string): Promise<ConfigItem[]> {
+    //___PERM___ if (isUserApprovedForCoreAction(loggedInUser, appInfo, PermissionActionEnum.CLONE_APPINFO) === false) { return; }
+    //if user does not have access to bucket (env + bucket access), return empty array
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/configs/get-list?appId=${appId}&bucketId=${bucketId}`;
+    let resp = await performBackendCall(url, "GET", null);
+    return resp;
+}
+
+export async function addConfigs(env: EnvTypeEnum, configList: ConfigItem[]): Promise<ConfigItem[]> {
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/configs/add`;
+    let resp = await performBackendCall(url, "POST", configList);
+    return resp;
+}
+
+export async function updateConfigs(env: EnvTypeEnum, configList: ConfigItem[]): Promise<ConfigItem[]> {
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/configs/update`;
+    let resp = await performBackendCall(url, "POST", configList);
+    return resp;
+}
+
+export async function deleteConfigs(env: EnvTypeEnum, configList: ConfigItem[]): Promise<boolean> {
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/configs/delete`;
+    let resp = await performBackendCall(url, "DELETE", configList);
+    return resp;
+}
+
 //#endregion
 
-
-
-
-
-// export async function fetchProjectList() {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/get-projectList`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     if(resp && resp.length > 0) {
-//         resp = sort<Project>(resp).by([
-//             { asc: p => p.owner.idsid?.toLowerCase() },
-//             { asc: p => p.org?.toUpperCase() },
-//             { asc: p => p.name?.toUpperCase() }
-//         ]);
-//     }
-//     return resp;
-// }
-
-// export async function fetchProjectDetails(projectId: string, assocPropFocus: boolean = false): Promise<Project> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/get-project?projectId=${projectId}&assocPropFocus=${assocPropFocus?.toString() ?? ''}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function addNewProject(project: Project): Promise<Project> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/create`;
-//     let resp = await performBackendCall(url, "POST", project);
-//     return resp;
-// }
-
-// export async function updateProject(project: Project): Promise<Project> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/update`;
-//     let resp = await performBackendCall(url, "POST", project);
-//     return resp;
-// }
-
-// export async function updateKeyProjectAspect(projectId: string, aspect: string, data: PropertyItem|LinkageInfo[]|BasicProperty[]): Promise<Project> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/update-key-aspect?projectId=${projectId}`;
-//     let kvp : BasicKVP = { key: aspect,  value: data }
-//     let resp = await performBackendCall(url, "POST", kvp);
-//     return resp;
-// }
-
-// export async function manageProjectLock(projectId: string, loggedInUser: LoggedInUser, isLockAction: boolean): Promise<Project> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/manage-lock?projectId=${projectId}&user=${loggedInUser?.email || ''}&isLockAction=${isLockAction?.toString() ?? ''}`;
-//     let resp = await performBackendCall(url, "POST", null);
-//     return resp;
-// }
-
-// export async function getProjectStatusIndicators(projectId: string): Promise<StatusIndicatorItem[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/get-status-indicators?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function cloneProject(existingProjectId: string, newName: string): Promise<Project> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/clone?projectId=${existingProjectId}&newName=${newName}`;
-//     let resp = await performBackendCall(url, "POST", null);
-//     return resp;
-// }
-
-// export async function deleteProject(projectId: string): Promise<boolean> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/delete?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "DELETE", projectId);
-//     return resp;
-// }
-
-// export async function downloadProjectData(project: Project, contentType: ProjectDataDownloadContentTypeEnum): Promise<any> {
-//     let projectId = project._id?.toString() as string
-//     let pName = project.name.toUpperCase().replaceAll(" ", "_")
-//     let fileName = "";
-//     if(contentType === ProjectDataDownloadContentTypeEnum.PDRD || contentType === ProjectDataDownloadContentTypeEnum.NETINFO) {
-//         fileName = getDateAppendedName(`${pName}__${contentType}_`) + ".xlsx";
-//     }
-//     else {
-//         fileName = getDateAppendedName(`${pName}__${contentType}_`) + ".zip";
-//     }
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/download-data?projectId=${projectId}&contentType=${contentType}`;
-//     let resp = await performBackendCall(url, "GET", null, true, fileName);
-//     return resp;
-// }
-
-// export async function saveProjectNotes(projectId: string, data: EditorNotesData): Promise<boolean> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/save-editor-notes?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "POST", data);
-//     return resp;
-// }
-
-// export async function uploadEditorNotesFiles(file: File, projectId: string): Promise<any> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/upload-editor-file`;
-//     let keyIdentifier = crypto.randomUUID();
-//     const formData = new FormData()
-//     formData.append('file', file)
-//     formData.append('projectId', projectId || '')
-//     formData.append('keyIdentifier', keyIdentifier)
-//     let resp = await performBackendCall(url, "POST", formData);
-//     return resp;
-// }
-
-// export async function deleteEditorNotesFile(projectId: string, fileURL: string): Promise<boolean> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/project/delete-editor-file?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "DELETE", {fileURL: fileURL});
-//     return resp;
-// }
-
-// //#endregion
-
-
-// //#region snapshots
-// //================================= SNAPSHOTS ============================================
-// export async function getSnapshots(projectId: string, excludeConponentEntries: boolean): Promise<SnapshotContext[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/snapshot/get-snapshots?projectId=${projectId}&excludeConponentEntries=${excludeConponentEntries.toString()}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function createSnapshots(snapshotContext: SnapshotContext): Promise<SnapshotContext[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/snapshot/create-snapshot`;
-//     let resp = await performBackendCall(url, "POST", snapshotContext);
-//     return resp;
-// }
-
-// export async function restoreSnapshots(snapshotContext: SnapshotContext): Promise<SnapshotContext[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/snapshot/restore-snapshot`;
-//     let resp = await performBackendCall(url, "POST", snapshotContext);
-//     return resp;
-// }
-
-// export async function deleteSnapshots(snapshotContextList: Array<SnapshotContext>): Promise<SnapshotContext[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/snapshot/delete-snapshot`;
-//     let resp = await performBackendCall(url, "DELETE", snapshotContextList);
-//     return resp;
-// }
-// //#endregion
-
-
-// //#region packageLayout
-// //================================= PACKAGE LAYOUT ============================================
-// export async function getPkgLayout(projectId: string): Promise<PackageLayout> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/layout/get-pkglayout?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp.at(0);
-// }
-
-// export async function getPkgLayoutCollection(): Promise<PackageLayout[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/layout/get-pkglayout`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function createStackup(stackupInfo: StackupGenInfo, previewMode: boolean): Promise<PackageLayout> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/layout/create-stackup?projectId=${stackupInfo.projectId}&previewMode=${previewMode.toString()}`;
-//     let resp = await performBackendCall(url, "POST", stackupInfo);
-//     return resp;
-// }
-
-
-// export async function updateStackup(pkgLayout: PackageLayout): Promise<PackageLayout> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/layout/update-stackup`;
-//     let resp = await performBackendCall(url, "POST", pkgLayout);
-//     return resp;
-// }
-
-// export async function updatelayerGroupSets(pkgLayout: PackageLayout): Promise<PackageLayout> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/layout/update-layergroups`;
-//     let resp = await performBackendCall(url, "POST", pkgLayout);
-//     return resp;
-// }
-
-// export async function updateRuleAreas(pkgLayout: PackageLayout): Promise<PackageLayout> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/layout/update-ruleareas`;
-//     let resp = await performBackendCall(url, "POST", pkgLayout);
-//     return resp;
-// }
-// //#endregion
-
-
-// //#region constraints
-// //=================================== CONSTRAINTS ====================================
-// export async function fetchConstraints(projectId: string, lastId: string|null, limit: number|null, 
-//     ruleAreaId: string|null, layergroupId: string|null, interfaceId: string|null, filterElementId: string|null,
-//     filterElementName: string|null, constraintType: ConstraintTypesEnum|null, excludeProps: boolean) : Promise<LayerGroupConstraints[]>{
-        
-//         let urlPrefix = `${getEnvContext().mainAPIUrl}/constraints/get-constraints?projectId=${projectId}&lastId=${lastId ?? ''}`
-//         let params_1 = `&limit=${limit?.toString() ?? ''}&ruleAreaId=${ruleAreaId ?? ''}&layergroupId=${layergroupId ?? ''}`
-//         let params_2 = `&interfaceId=${interfaceId ?? ''}&filterElementId=${filterElementId ?? ''}`
-//         let params_3 = `&filterElementName=${filterElementName ?? ''}&constraintType=${constraintType ?? ''}&excludeProps=${excludeProps.toString() ?? ''}`;
-
-//         let url = `${urlPrefix}${params_1}${params_2}${params_3}`
-//         let resp = await performBackendCall(url, "GET", null);
-
-//     return resp;
-// }
-
-// export async function getConstraintsCount(projectId: string, 
-//     ruleAreaId: string|null, layergroupId: string|null, interfaceId: string|null, filterElementId: string|null,
-//     constraintType: ConstraintTypesEnum|null ) : Promise<number>{
-        
-//         let urlPrefix = `${getEnvContext().mainAPIUrl}/constraints/get-constraint-count?projectId=${projectId}`
-//         let params_1 = `&ruleAreaId=${ruleAreaId ?? ''}&layergroupId=${layergroupId ?? ''}`
-//         let params_2 = `&interfaceId=${interfaceId ?? ''}&filterElementId=${filterElementId ?? ''}&constraintType=${constraintType ?? ''}`;
-
-//         let url = `${urlPrefix}${params_1}${params_2}`
-//         let resp = await performBackendCall(url, "GET", null);
-
-//     return resp;
-// }
-
-// export async function getDefaultConstraints(projectId: string, dataSetName: string|null, excludeConstraintEntries: boolean, performProlif: boolean): Promise<DefaultConstraints> {
-//     let url = `${getEnvContext().mainAPIUrl}/constraints/get-defaults?projectId=${projectId}&excludeConstraintEntries=${excludeConstraintEntries.toString()}&performProlif=${performProlif.toString()}`;
-//     if(dataSetName && dataSetName.length > 0) {
-//         url = url + `&dataSetName=${dataSetName}`
-//     }
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function uploadDefaultConstraints(file: File, projectId: string, nameIdentifier: string, adjustedRuleAreaXMods: Map<string, string>|null, previewMode: boolean): Promise<DefaultConstraints> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/constraints/upload-defaults`;
-//     const formData = new FormData()
-//     formData.append('file', file)
-//     formData.append('projectId', projectId)
-//     formData.append('nameIdentifier', nameIdentifier)
-//     formData.append('previewMode', previewMode.toString())
-//     if(adjustedRuleAreaXMods && adjustedRuleAreaXMods.size > 0) {
-//         let xmodAdjustKVPs = new Array<BasicKVP>();
-//         for(let [raid, newXmodName] of adjustedRuleAreaXMods) {
-//             xmodAdjustKVPs.push({key: raid, value: newXmodName } as BasicKVP);
-//         }
-//         formData.append('xmodAdjustments', JSON.stringify(xmodAdjustKVPs))
-//     }
-
-//     let resp = await performBackendCall(url, "POST", formData);
-//     return resp;
-// }
-
-// export async function createEditableDefaultConstraints(data: DefaultConstraints): Promise<DefaultConstraints> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/constraints/create-editable-defaults`;
-//     let resp = await performBackendCall(url, "POST", data);
-//     return resp;
-// }
-
-// export async function saveDefaultConstraints(data: DefaultConstraints): Promise<DefaultConstraints> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/constraints/save-editable-defaults`;
-//     let resp = await performBackendCall(url, "POST", data);
-//     return resp;
-// }
-
-// export async function forceOverwriteWithDefaultConstraints(projectId: string): Promise<boolean> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/constraints/clear-custom-values?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "POST", undefined);
-//     return resp;
-// }
-
-// export async function updateRoutingConstraints(lgcList: LayerGroupConstraints[]) : Promise<LayerGroupConstraints[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/constraints/update`;
-//     let resp = await performBackendCall(url, "POST", lgcList);
-//     return resp;
-// }
-
-// export async function changeLGSetForConstraintElement(projectId: string, elementId: string, newLGSetId: string): Promise<boolean> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/constraints/switch-lgset?projectId=${projectId}&elementId=${elementId}&newLGSetId=${newLGSetId}`;
-//     let resp = await performBackendCall(url, "POST", undefined);
-//     return resp;
-// }
-
-// export async function copyOverConstraints(projectId: string, sourceRuleArea: RuleArea, 
-//     destinationRuleArea: RuleArea, constraintType: ConstraintTypesEnum, interfaceId: string|null) : Promise<boolean>{
-//     let url: string = `${getEnvContext().mainAPIUrl}/constraints/copyover-constraints?projectId=${projectId}&srcRuleAreaId=${sourceRuleArea.id}`
-//                             + `&destRuleAreaId=${destinationRuleArea.id}&constraintType=${constraintType ?? ''}&interfaceId=${interfaceId ?? ''}`;
-//     let resp = await performBackendCall(url, "POST", undefined);
-//     return resp;
-// }
-// //#endregion
-
-
-// //#region net
-// //=================================== NET ====================================
-// export async function uploadNetList(project: Project, file: File, forceCommit: boolean): Promise<boolean> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/nets/upload-netlist`;
-
-//     let map = new Map<string, Map<string, string>>();
-//     let innerMap = new Map<string, string>([
-//         ["projectId", project._id?.toString() || ""],
-//         ["forceCommit", forceCommit.toString() || ""],
-//     ])
-//     map.set(file.name, innerMap);
-
-//     let resp = await postChunkedFileList(url, [file], map)
-
-//     // const formData = new FormData()
-//     // formData.append('file', file)
-//     // formData.append('projectId', project._id?.toString() || "")
-//     // formData.append('forceCommit', forceCommit.toString() || "")
-//     // let resp = await performBackendCall(url, "POST", formData);
-//     return resp;
-// }
-
-// export async function replaceNetList(project: Project, file: File, mappingFiles: File[]): Promise<any> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/nets/replace-netlist`;
-//     let pName = project.name.toUpperCase().replaceAll(" ", "_")
-//     let netListAdjustFileName = getDateAppendedName(`${pName}__NetAdjust`) + ".zip";
-
-//     //============
-//     let map = new Map<string, Map<string, string>>();
-//     let innerMap = new Map<string, string>([
-//         ["projectId", project._id?.toString() || ""],
-//         ["netListFileName", file?.name || ""],
-//     ]);
-
-//     let allFiles = ([file]).concat(mappingFiles.filter(a => a.name.length > 0));
-//     allFiles.forEach(x => {
-//         map.set(x.name, innerMap);
-//     })
-
-//     let resp = await postChunkedFileList(url, allFiles, map, true, netListAdjustFileName)
-
-//     // const formData = new FormData()
-//     // formData.append('files', file) //do not specify name here
-//     // formData.append('netListFileName', file?.name || "")  //Important!
-//     // formData.append('projectId', project._id?.toString() as string || "")
-//     // for(let i = 0; i < mappingFiles.length; i++) {
-//     //     formData.append('files', mappingFiles[i]) //do not specify name here
-//     // }
-//     // let resp = await performBackendCall(url, "POST", formData, true, netListAdjustFileName);
-
-//     return resp;
-// }
-
-// export async function overrideNetPropertiesWithFileUpload(project: Project, file: File, aspect: string): Promise<any> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/nets/upload-net-properties`;
-    
-//     let map = new Map<string, Map<string, string>>();
-//     let innerMap = new Map<string, string>([
-//         ["projectId", project._id?.toString() || ""],
-//         ["aspect", aspect],
-//     ])
-//     map.set(file.name, innerMap);
-
-//     let resp = await postChunkedFileList(url, [file], map)
-
-    
-//     // const formData = new FormData()
-//     // formData.append('projectId', project._id?.toString() as string || "")
-//     // formData.append('aspect', aspect)
-//     // formData.append('file', file) //do not specify name here
-//     // let resp = await performBackendCall(url, "POST", formData);
-//     return resp;
-// }
-
-// export async function fetchNets(projectId: string, lastId: string|null, limit: number|null, 
-//     filterNetName: string|null, filterInterfaceId: string|null, filterNetclassId: string|null, nonClassifiedNetsOnly: boolean, 
-//     excludeProps: boolean, diffPairedOnly: boolean, nonDiffNetsOnly: boolean) : Promise<Net[]>{
-//         let urlPrefix: string = `${getEnvContext().mainAPIUrl}/nets/get-nets?projectId=${projectId}&lastId=${lastId ?? ''}`
-//         let params_1 = `&limit=${limit?.toString() ?? ''}&filterNetName=${filterNetName ?? ''}&filterInterfaceId=${filterInterfaceId ?? ''}`
-//         let params_2 = `&filterNetclassId=${filterNetclassId ?? ''}&nonClassifiedNetsOnly=${nonClassifiedNetsOnly.toString() ?? ''}`
-//         let params_3 = `&excludeProps=${excludeProps.toString() ?? ''}&diffPairedOnly=${diffPairedOnly.toString() ?? ''}&nonDiffNetsOnly=${nonDiffNetsOnly.toString() ?? ''}`;
-//         let url = `${urlPrefix}${params_1}${params_2}${params_3}`
-//         let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function updateNets(netUpdateContext: NetMgmtCtx): Promise<NetMgmtCtx> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/nets/update-nets`;
-//     let resp = await performBackendCall(url, "POST", netUpdateContext);
-//     return resp;
-// }
-
-// export async function runAutomapper(projectId: string, elementId: string): Promise<boolean> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/nets/automap?projectId=${projectId}&elementId=${elementId}`;
-//     let resp = await performBackendCall(url, "POST", undefined);
-//     return resp;
-// }
-
-// export async function clearAllNetPropertyValues(projectId: string, ): Promise<boolean> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/nets/clear-prop-values?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "POST", undefined);
-//     return resp;
-// }
-// export async function getNetSummaryInfo(projectId: string, excludeNetclassData: boolean): Promise<NetSummary> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/nets/get-summary-info?projectId=${projectId}&excludeNetclassData=${excludeNetclassData.toString()}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-// //#endregion
-
-
-// //#region netclass
-// //=================================== NETCLASS ====================================
-// export async function fetchNetclassList(projectId: string) : Promise<Netclass[]>{
-//     let url: string = `${getEnvContext().mainAPIUrl}/netclass/get-netclass-list?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function updateNetclasses(netclasses: Netclass[]) : Promise<Netclass[]>{
-//     let url: string = `${getEnvContext().mainAPIUrl}/netclass/update-netclass-list`;
-//     let resp = await performBackendCall(url, "POST", netclasses);
-//     return resp;
-// }
-
-// export async function fetchClassRelationLayout(projectId: string, lastId: string|null, limit: number|null, 
-//     ruleAreaId: string|null, interfaceId: string|null, netclassId: string|null, netclassName: string|null, performSortSlots: boolean) : Promise<C2CRow[]> {
-        
-//     let urlPrefix = `${getEnvContext().mainAPIUrl}/netclass/get-class-relation-layout?projectId=${projectId}&lastId=${lastId ?? ''}&limit=${limit?.toString() ?? ''}`
-//     let params_1 = `&ruleAreaId=${ruleAreaId ?? ''}&interfaceId=${interfaceId ?? ''}&netclassId=${netclassId ?? ''}&netclassName=${netclassName ?? ''}&performSortSlots=${performSortSlots.toString()}`;
-
-//     let url = `${urlPrefix}${params_1}`
-//     let resp = await performBackendCall(url, "GET", null);
-
-//     return resp;
-// }
-
-// export async function updateClassRelationLayout(c2cRowList: C2CRow[]) : Promise<C2CRow[]>{
-//     let url: string = `${getEnvContext().mainAPIUrl}/netclass/update-class-relation-layout`;
-//     let resp = await performBackendCall(url, "POST", c2cRowList);
-//     return resp;
-// }
-
-// export async function getRelationNameElementsForIface(projectId: string, interfaceId: string, ruleAreaId: string|null) : Promise<BasicProperty>{
-//     let raPart = (ruleAreaId && ruleAreaId.length > 0) ? `&ruleAreaId=${ruleAreaId}` : '';
-//     let url: string = `${getEnvContext().mainAPIUrl}/netclass/get-class-relation-names-for-Interface?projectId=${projectId}&interfaceId=${interfaceId}${raPart}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function clearClassRelationsForRuleArea(projectId: string, ruleArea: RuleArea, deleteAllRelationBrands: boolean) : Promise<boolean>{
-//     let url: string = `${getEnvContext().mainAPIUrl}/netclass/clear-class-relations?projectId=${projectId}&ruleAreaId=${ruleArea.id}&deleteAllRelationBrands=${deleteAllRelationBrands.toString()}`;
-//     let resp = await performBackendCall(url, "POST", undefined);
-//     return resp;
-// }
-
-// export async function fetchG2GContextList(projectId: string, interfaceId?: string) : Promise<G2GRelationContext[]>{
-//     let url: string = `${getEnvContext().mainAPIUrl}/netclass/get-g2g-list?projectId=${projectId}&interfaceId=${interfaceId || ""}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function processG2GUpdates(projectId: string, g2gRelationCtxList: G2GRelationContext[]) : Promise<boolean>{
-//     let url: string = `${getEnvContext().mainAPIUrl}/netclass/process-g2g-updates?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "POST", g2gRelationCtxList);
-//     return resp;
-// }
-// //#endregion
-
-
-// //#region interface
-// //=================================== INTERFACE ====================================
-// export async function fetchInterfaceList(projectId: string) : Promise<Interface[]>{
-//     let url: string = `${getEnvContext().mainAPIUrl}/interface/get-interfaceList?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function fetchInterfaceDetails(interfaceId: string): Promise<Interface> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/interface/get-interface?interfaceId=${interfaceId}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function getInterfaceTemplates(projectId: string, org: string): Promise<InterfaceTemplate[]> {
-//     let url = `${getEnvContext().mainAPIUrl}/interface/get-templates?projectId=${projectId}&org=${org}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function createInterface(iface: Interface): Promise<Interface> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/interface/create`;
-//     let resp = await performBackendCall(url, "POST", iface);
-//     return resp;
-// }
-
-// export async function deleteInterface(iface: Interface): Promise<boolean> {
-//     let interfaceId = iface?._id?.toString() as string
-//     let url: string = `${getEnvContext().mainAPIUrl}/interface/delete?projectId=${iface.projectId}&interfaceId=${interfaceId}`;
-//     let resp = await performBackendCall(url, "DELETE", { projectId: iface.projectId });
-//     return resp;
-// }
-
-// export async function updateInterface(iface: Interface, excludeNetclassUpdates: boolean): Promise<Interface> {
-//     let ifaceItem = {...iface}
-//     if(excludeNetclassUpdates === true) {
-//         ifaceItem.contextProperties = ifaceItem.contextProperties.filter(a => a.name !== NETCLASSES_PROP_NAME) 
-//     }
-//     let url: string = `${getEnvContext().mainAPIUrl}/interface/update`;
-//     let resp = await performBackendCall(url, "POST", ifaceItem);
-//     return resp;
-// }
-
-// export async function saveAsTemplate(iface: Interface): Promise<InterfaceTemplate> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/interface/save-as-template`;
-//     let resp = await performBackendCall(url, "POST", iface);
-//     return resp;
-// }
-
-// export async function getInterfaceCollaterals(projectId: string, interfaceId: string): Promise<StorageCollateralInfo[]> {
-//     let url = `${getEnvContext().mainAPIUrl}/interface/get-collaterals?projectId=${projectId}&interfaceId=${interfaceId}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function uploadInterfaceCollaterals(projectId: string, interfaceId: string, files: FileWithPath[]|File[]): Promise<StorageCollateralInfo[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/interface/upload-collaterals`;
-//     const formData = new FormData()
-//     if (files && files.length > 0) {
-//         files.forEach((fi: File) => { formData.append('files', fi) });  // Use the same key 'files' for each file
-//     }
-//     formData.append('projectId', projectId || "")
-//     formData.append('interfaceId', interfaceId || "")
-//     let resp = await performBackendCall(url, "POST", formData);
-//     return resp;
-// }
-
-// export async function deleteInterfaceCollaterals(ifaceCollaterals: Array<StorageCollateralInfo>): Promise<StorageCollateralInfo[]> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/interface/delete-collaterals`;
-//     let resp = await performBackendCall(url, "DELETE", ifaceCollaterals);
-//     return resp;
-// }
-
-// export async function downloadInterfaceCollaterals(projectId: string, interfaceId: string, collateral: StorageCollateralInfo) {
-//     let url = `${getEnvContext().mainAPIUrl}/interface/download-collaterals?projectId=${projectId}&interfaceId=${interfaceId}&fileName=${collateral.name}`;
-//     let resp = await performBackendCall(url, "GET", null, true, collateral.name);
-//     return resp;
-// }
-
-// export async function saveInterfaceNotes(projectId: string, interfaceId: string, data: EditorNotesData): Promise<boolean> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/interface/save-editor-notes?projectId=${projectId}&interfaceId=${interfaceId}`;
-//     let resp = await performBackendCall(url, "POST", data);
-//     return resp;
-// }
-// //#endregion
-
-
-// //#region powerinfo
-// //=================================== POWER INFO ====================================
-// export async function fetchPowerInfo(projectId: string): Promise<PowerInfo> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/power/get-powerinfo?projectId=${projectId}`;
-//     let resp = await performBackendCall(url, "GET", null);
-//     return resp;
-// }
-
-// export async function replacePowerInfo(powerInfo: PowerInfo, replaceRails: boolean, replaceComponents: boolean): Promise<PowerInfo> {   
-//     let url: string = `${getEnvContext().mainAPIUrl}/power/save-powerinfo`
-//     if(replaceRails === true && replaceComponents === true) {
-//         url = url + `?replaceAll=true`;
-//     }
-//     else {
-//         url = url + `?replaceRails=${replaceRails.toString()}&replaceComponents=${replaceComponents.toString()}`;
-//     }
-//     let resp = await performBackendCall(url, "POST", powerInfo);
-//     return resp;
-// }
-
-// export async function uploadPowerInfo(file: File, projectId: string, powerInfoAspect: PowerInfoAspectEnum): Promise<PowerInfo> {
-//     let url: string = `${getEnvContext().mainAPIUrl}/power/upload-data`;
-//     const formData = new FormData()
-//     formData.append('file', file)
-//     formData.append('projectId', projectId)
-//     formData.append('aspect', powerInfoAspect.toString())
-//     let resp = await performBackendCall(url, "POST", formData);
-//     return resp;
-// }
-// //#endregion
 
 
 
@@ -733,7 +229,7 @@ export async function createApproverWG(awg: string, loggedInUser: LoggedInUser) 
     let grpAdmins = [loggedInUser.idsid]
     let body = { "ApproverWGName": awg, "GroupAdmins": grpAdmins }
 
-    let url = MLCR_AUTH_AGS_URL + "/apwg/create?appName=" + AGS_APP_NAME
+    let url = MLCR_AUTH_AGS_URL_V2 + "/apwg/create?appName=" + AGS_APP_NAME
 
     let config: any = {
         method: "post",
@@ -774,7 +270,7 @@ export async function createEntitlements(entitlementNames: string[], awg: string
     }
 
     const payload = { "entitlements": entArr, ...entAppDetails };
-    let url = MLCR_AUTH_AGS_URL + "/ent/create?appName=" + AGS_APP_NAME
+    let url = MLCR_AUTH_AGS_URL_V2 + "/ent/create?appName=" + AGS_APP_NAME
 
     let config: any = {
         method: 'post',
@@ -834,7 +330,7 @@ export async function getEntitlementInfoByName(entName: string, expandMemberDeta
 
 //-----------------------------------------------------
 export async function updateEntitlementWithUser(entName: string, entId: string, existingEntMemberWwidList: string[], usersWWIDs: string[], loggedInUser: LoggedInUser){
-    let baseUrl = MLCR_AUTH_AGS_URL + "/ent/update?appName=" + AGS_APP_NAME
+    let baseUrl = MLCR_AUTH_AGS_URL_V2 + "/ent/update?appName=" + AGS_APP_NAME
     
     let addNewUsers: string[] = []
     let removeUsers: string[] = []
@@ -925,7 +421,7 @@ export async function deleteEntitlements(entNames: string[]) : Promise<any>{
         }
     })
 
-    let url = MLCR_AUTH_AGS_URL + "/ent/delete?appName=" + AGS_APP_NAME
+    let url = MLCR_AUTH_AGS_URL_V2 + "/ent/delete?appName=" + AGS_APP_NAME
 
     let retValue: any
 
@@ -981,11 +477,10 @@ export async function deleteAWG(awg: string) : Promise<any>{
 
 export async function getPermissionEntitlementsForCurrentUser(loggedInUser: LoggedInUser) : Promise<Map<string, string>> {
     let entitlementMapping = new Map<string, string>();
-    let permEnv = getEnvContext().permContext.toUpperCase()
     
     let apiUrlPrefix = `/users/${loggedInUser.id}/memberOf/microsoft.graph.group?$count=true&$orderby=displayName&`
-    let apiUrlFilterSection = `$filter=startswith(displayName,'${AGS_APP_NAME}_${permEnv}_') or startswith(displayName,'${AGS_APP_ACCESS_ENTITLEMENT}')&$select=displayName,id`
-    let apiUrl = apiUrlPrefix + apiUrlFilterSection;
+    let apiUrlFilterSection = `$filter=startswith(displayName,'${AGS_APP_NAME}_') or startswith(displayName,'${AGS_APP_ACCESS_ENTITLEMENT}')&$select=displayName,id`
+    let apiUrl = apiUrlPrefix + apiUrlFilterSection + "&$top=999";  // Add $top=999 to request up to 999 entries (max allowed by Graph API is 999)
     try {
         await Providers.globalProvider
         .graph
@@ -1014,15 +509,15 @@ export async function getPermissionEntitlementsForCurrentUser(loggedInUser: Logg
 }
 
 
-export async function getPermissionAWGItemsForCurrentUser(loggedInUser: LoggedInUser, projectId: string) : Promise<QuickStatus<string>> {
+export async function getPermissionAWGItemsForCurrentUser(loggedInUser: LoggedInUser, ownerElementId: string) : Promise<QuickStatus<string>> {
     let awgName = ''
     try {
-        if(projectId && projectId.trim().length > 1){
-            awgName = getApproverWGName(projectId)
+        if(ownerElementId && ownerElementId.trim().length > 1){
+            awgName = getApproverWGName(ownerElementId)
             if(awgName) {
                 let awgUsers: any [] = []
                 
-                let url = MLCR_AUTH_AGS_URL + "/apwg/get?fullName=" + awgName + "&type=Approver&appName=" + AGS_APP_NAME
+                let url = MLCR_AUTH_AGS_URL_V2 + "/apwg/get?fullName=" + awgName + "&type=Approver&appName=" + AGS_APP_NAME
                 
                 let config: any = {
                     method: "get",
@@ -1050,7 +545,7 @@ export async function getPermissionAWGItemsForCurrentUser(loggedInUser: LoggedIn
         }
     }
     catch(error: any) {
-        let errMsg = `Failed to get approver work group members for current project: ${projectId}. --- ${error.message}`
+        let errMsg = `Failed to get approver work group members for current project: ${ownerElementId}. --- ${error.message}`
         console.error(errMsg)
         DisplayError("500", ErrorSeverityValue.ERROR, errMsg);
     }

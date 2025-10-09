@@ -4,7 +4,7 @@ import { getFilterForBucket, validateConfigListForAddOrUpdate } from "./generalU
 import { AppInfo, Bucket, ConfigItem } from "../Models/ServiceModels";
 import * as mongo from "mongodb";
 import * as exceljs from "exceljs";
-import { ConfigContentTypeEnum, EnvTypeEnum, MAX_DAYS_FOR_DELETION, MONGO_ID_CHECK_REGEX_PATTERN } from "../Models/Constants";
+import { ConfigContentTypeEnum, EnvTypeEnum, MONGO_ID_CHECK_REGEX_PATTERN } from "../Models/Constants";
 
 
 export async function performConfigRetrieval(env: string, focusApp: string, focusBucket: string, query: any) : Promise<ConfigItem[]>{
@@ -127,6 +127,8 @@ export async function performAppDelete(env: string, appId: string, inDelEnv: str
     const today = new Date();
     const utcToday = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
 
+    const MAX_DAYS_FOR_DELETION = 0;
+    
     if (env.toLowerCase() !== EnvTypeEnum.DEVELOPMENT.toLowerCase() && env.toLowerCase() !== "dev") {
         throw Error("Delete action can only be performed in development environment");
     }

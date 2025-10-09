@@ -73,7 +73,6 @@ export enum NamingContentTypeEnum {
     BUCKET = "BUCKET",
     CONFIGITEM = "CONFIGITEM",
     ARBITRARY_DEFAULT = "ARBITRARY_DEFAULT",
-    SNAPSHOT = "SNAPSHOT"
 }
 
 
@@ -81,11 +80,6 @@ export enum AppInfoPropertyCategoryEnum {
     PERMISSION_ROLES = "PERMISSION_ROLES",
 }
 
-
-
-//contextProperties items
-export const BUCKETLIST = "BUCKETLIST";
-export const ENVIRONMENTLIST = "ENVIRONMENTLIST";
 
 export enum DatabaseConnectionTypeEnum {
     PROD_DB  = "PROD_DB",
@@ -98,8 +92,7 @@ export enum DBCollectionTypeEnum {
     APPINFO_COLLECTION = "AppInfo",  //keep this as the first item on here!
     BUCKET_COLLECTION = "Bucket",
     CONFIGITEM_COLLECTION = "ConfigItem",
-    SNAPSHOT_CONTEXT_COLLECTION = "SnapshotContext",
-    CHANGE_CONTEXT_COLLECTION = "ChangeContext",
+    CHANGE_CHANGE_HISTORY_COLLECTION = "ConfigChangeHistory",
 }
 
 
@@ -108,11 +101,8 @@ export const DB_COLL_TYPE_CLONE_ORDER = new Map<number, string>([
     [1, DBCollectionTypeEnum.APPINFO_COLLECTION],
     [2, DBCollectionTypeEnum.BUCKET_COLLECTION],
     [3, DBCollectionTypeEnum.CONFIGITEM_COLLECTION],
-    [4, DBCollectionTypeEnum.SNAPSHOT_CONTEXT_COLLECTION]
-    
-    // CONSTRAINT_CHANGE_INSTANCE_COLLECTION = "ConstraintChangeInstance",
+    [4, DBCollectionTypeEnum.CHANGE_CHANGE_HISTORY_COLLECTION]
 ])
-
 
 
 export class AppConfigConstants {
@@ -120,7 +110,13 @@ export class AppConfigConstants {
     static readonly BUCKETID__MAIN_GENERAL_CONFIG = "686ec8ccb5dcb2fcb0fb32ce";
 }
 
-export const MAX_DAYS_FOR_DELETION = 30; //take note!
+
+//contextProperties items
+export const BUCKETLIST = "BUCKETLIST";
+export const ENVIRONMENTLIST = "ENVIRONMENTLIST";
+
+export const CHANGE_INDICATOR = "CHANGE_INDICATOR";
+
 export const MONGO_ID_CHECK_REGEX_PATTERN : RegExp = /^[0-9a-fA-F]{24}$/;
 
 

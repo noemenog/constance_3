@@ -1,16 +1,14 @@
 import express, { Request, Response } from "express";
-import { getAppInfoCollection, getBucketCollection, getConfigCollection } from "../../dbConn";
 import * as mongo from "mongodb";
-import { containsSpecialChars, getFilterForApp, getFilterForBucket, validateConfigListForAddOrUpdate } from "../../BizLogic/generalUtils";
-import { performAppDelete, performAppEnvironmentRetrieval, performBucketAdd, performBucketExport, performConfigAdd } from "../../BizLogic/midwareUtils";
 import crypto, { randomUUID } from "crypto"
-import { BUCKETLIST, DBCollectionTypeEnum, EnvTypeEnum, ErrorSeverityValue } from "../../Models/Constants";
+import { DBCollectionTypeEnum, EnvTypeEnum, ErrorSeverityValue } from "../../Models/Constants";
 import { AppInfo, Bucket, ConfigItem } from "../../Models/ServiceModels";
-import { ResponseData } from "../../Models/HelperModels";
-import { includeContextDetailsForApp, performAppAdd } from "../../BizLogic/AppInfoLogic";
+import { ResponseData, User } from "../../Models/HelperModels";
+import { includeContextDetailsForApp, performAppAdd, performAppDelete, performAppUpdate } from "../../BizLogic/AppInfoLogic";
 import { Filter } from "mongodb";
 import { ServiceModelRepository } from "../../Repository/ServiceModelRepository";
 import { GetEnvironmentType } from "../../BizLogic/BasicCommonLogic";
+import { exportBucket } from "../../BizLogic/BucketLogic";
 
 
 export const appInfoRouter = express.Router();
@@ -47,9 +45,7 @@ appInfoRouter.get("/:env/appinfo/get-details", async (req: Request, res: Respons
         }
         
         let includeBuckets: boolean = (req.query.includeBuckets?.toString()?.trim()?.toLowerCase() === "true") ? true : false;
-        
         let app = await appRepo.GetWithId(appId)
-        
         if(app) {
             app = await includeContextDetailsForApp(app, env, includeBuckets, true);
         }
@@ -70,15 +66,14 @@ appInfoRouter.get("/:env/appinfo/get-details", async (req: Request, res: Respons
 
 appInfoRouter.post("/:env/appinfo/add", async (req: Request, res: Response) => {
     try {
-        let env = req.params.env;
-        if (env.toLowerCase() !== EnvTypeEnum.DEVELOPMENT.toLowerCase() && env.toLowerCase() !== "dev") {
-            throw Error("Creation of new App is only allowed in development environment");
-        }
-        
+        let env : EnvTypeEnum = GetEnvironmentType(req.params.env);
         const app: AppInfo = req.body as AppInfo;
         
         if (app && app.name.length > 0) {
-            let insertedApp = await performAppAdd(EnvTypeEnum.DEVELOPMENT, app);
+            let insertedApp = await performAppAdd(app);
+            if(insertedApp) {
+                insertedApp = await includeContextDetailsForApp(insertedApp, env, false, true);
+            }
             res.status(200).send({ payload: insertedApp } as ResponseData);
         }
         else {
@@ -95,6 +90,265 @@ appInfoRouter.post("/:env/appinfo/add", async (req: Request, res: Response) => {
     }
 });
 
+appInfoRouter.post("/:env/appinfo/update", async (req: Request, res: Response) => {
+    try {
+        let env : EnvTypeEnum = GetEnvironmentType(req.params.env);
+        const app: AppInfo = req.body as AppInfo;
+        
+        if (app && app._id && app.name.length > 0) {
+            let updatedApp = await performAppUpdate(app);
+            if(updatedApp) {
+                updatedApp = await includeContextDetailsForApp(updatedApp, env, false, true);
+            }
+            res.status(200).send({ payload: updatedApp } as ResponseData);
+        }
+        else {
+            throw new Error(`Could not add new app info because no valid app info was provided for the operation`);
+        }
+    }
+    catch (e: any) {
+        let resp = {
+            payload: undefined,
+            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
+        }
+        console.error(resp);
+        res.status(500).json(resp);
+    }
+});
+
+
+appInfoRouter.delete("/:env/appinfo/delete", async (req: Request, res: Response) => {
+    try {
+        let env : EnvTypeEnum = GetEnvironmentType(req.params.env);
+        let appId : string = req.query.appId?.toString() ?? ''
+        if (!appId || appId === 'undefined' || appId.trim().length === 0) {
+            throw new Error(`Input 'appId' cannot be null or empty or undefined`);
+        }
+        let delEnv : string = req.query.delEnv?.toString() ?? ''
+        if (!delEnv || delEnv === 'undefined' || delEnv.trim().length === 0) {
+            throw new Error(`Input 'delEnv' cannot be null or empty or undefined`);
+        }
+        
+        let result : EnvTypeEnum[] = await performAppDelete(env, appId, delEnv);
+        res.status(200).send({ payload: result } as ResponseData);
+    }
+    catch (e: any) {
+        let resp = {
+            payload: undefined,
+            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
+        }
+        console.error(resp);
+        res.status(500).json(resp);
+    }
+});
+
+
+
+appInfoRouter.post("/:env/appinfo/manage-lock", async (req: Request, res: Response) => {
+    try {
+        let env : EnvTypeEnum = GetEnvironmentType(req.params.env);
+        let appId : string = req.query.appId?.toString() || ''
+        let userEmail : string = req.query.user?.toString() || ''
+        let isLockAction: boolean = (req.query.isLockAction?.toString()?.trim()?.toLowerCase() === "true") ? true : false;
+
+        if (!appId || appId === 'undefined' || appId.trim().length === 0) {
+            throw new Error(`Failed to manage lock action. Input 'appId' cannot be null or empty or undefined`);
+        }
+        if (!userEmail || userEmail === 'undefined' || userEmail.trim().length === 0) {
+            throw new Error(`Failed to manage lock action. Input user info cannot be null or empty or undefined`);
+        }
+
+        let appRepo = new ServiceModelRepository<AppInfo>(DBCollectionTypeEnum.APPINFO_COLLECTION, env)
+        let appInfo = await appRepo.GetWithId(appId)
+        if (appInfo) {
+            const user = (req.headers.user) ? JSON.parse(req.headers.user as string) as User : null
+            if(user?.email.trim().toLowerCase() !== userEmail.trim().toLowerCase()) {
+                throw new Error(`Could not update app lock status. Indicated user must be same as program executor`);
+            }
+            
+            if(isLockAction) {
+                appInfo.lockedBy = userEmail.trim().toLowerCase();
+            }
+            else {
+                appInfo.lockedBy = null;
+            }
+
+            let updatedApp = await performAppUpdate(appInfo);
+            if(updatedApp) {
+                updatedApp = await includeContextDetailsForApp(updatedApp, env, false, true);
+            }
+            res.status(200).send({ payload: updatedApp } as ResponseData);
+        }
+        else {
+            throw new Error(`Could not update project lock status because no such project was found in the system`);
+        }
+    }
+    catch (e: any) {
+        let resp = {
+            payload: undefined,
+            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
+        }
+        res.status(500).json(resp);
+    }
+});
+
+
+appInfoRouter.post("/:env/appinfo/export-all", async (req: Request, res: Response) => {
+    try {
+        let env = req.params.env;
+        let appId : string = req.query.appId?.toString() ?? ''
+        let src : string = req.query.src?.toString() ?? ''
+        let dest : string = req.query.dest?.toString() ?? ''
+
+        const user = (req.headers.user) ? JSON.parse(req.headers.user as string) as User : null;
+
+        if (!appId || appId === 'undefined' || appId.trim().length === 0) {
+            throw new Error(`Input 'appId' cannot be null or empty or undefined`);
+        }
+        if (!src || src === 'undefined' || src.trim().length === 0) {
+            throw new Error(`Input 'src' cannot be null or empty or undefined`);
+        }
+        if (!dest || dest === 'undefined' || dest.trim().length === 0) {
+            throw new Error(`Input 'dest' cannot be null or empty or undefined`);
+        }
+
+        if (!user) {
+            throw new Error(`Cannot export configs! Input 'user' info is invalid!`);
+        }
+
+        let srcBuckRepo = new ServiceModelRepository<Bucket>(DBCollectionTypeEnum.BUCKET_COLLECTION, src)
+        let srcBuckets = await srcBuckRepo.GetAllByOwnerElementId(appId);
+        if(srcBuckets && srcBuckets.length > 0) {
+            for(let bucket of srcBuckets) {
+                await exportBucket(src, bucket, dest, user);
+            }
+        }
+        res.status(200).send({ payload: true } as ResponseData);
+    }
+    catch (e: any) {
+        let resp = {
+            payload: undefined,
+            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
+        }
+        console.error(resp);
+        res.status(500).json(resp);
+    }
+});
+
+
+
+appInfoRouter.post("/:env/appinfo/clone", async (req: Request, res: Response) => {
+    try {
+        let env = req.params.env;
+        let appId : string = req.query.appId?.toString() ?? ''
+        let newName : string = req.query.newName?.toString() ?? ''
+        
+
+        if (!appId) {
+            throw new Error(`Input 'appId' cannot be null or empty or undefined`);
+        }
+        if (!newName) {
+            throw new Error(`Input 'newName' cannot be null or empty or undefined`);
+        }
+
+        let result = null // await performAppDelete(env, appId, inDelEnv);
+        res.status(200).send({ payload: result } as ResponseData);
+    }
+    catch (e: any) {
+        let resp = {
+            payload: undefined,
+            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
+        }
+        console.error(resp);
+        res.status(500).json(resp);
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+        
+        // const app: AppInfo = req.body as AppInfo;
+        // let env = req.params.env;
+        // if (env.toLowerCase() !== EnvTypeEnum.DEVELOPMENT.toLowerCase() && env.toLowerCase() !== "dev") {
+        //     throw Error("Update action on an existing App can only be performed in development environment");
+        // }
+        
+        // if (app && app.name.length > 0) {
+        //     app.lastUpdatedOn = new Date();
+        //     app.enabled = true;
+        //     const collection = getAppInfoCollection(req.params.env);
+            
+        //     //check if app name has special/unwanted characters
+        //     if(containsSpecialChars([app.name])){
+        //         throw Error("App name contains special characters that is not allowed.");
+        //     }
+
+        //     const foundApps = (await collection.find({ _id: new mongo.ObjectId(app._id?.toString()) } as any).toArray()) as AppInfo[];
+            
+        //     if (foundApps && foundApps.length > 0) {
+        //         let updatedData = foundApps[0];
+        //         updatedData.name = app.name;
+        //         updatedData.description = app.description;
+        //         updatedData.enabled = app.enabled;
+        //         updatedData.lastUpdatedOn = app.lastUpdatedOn;
+
+        //         await collection.replaceOne({ _id: updatedData._id as any }, updatedData);
+
+        //         //get other environments
+        //         let otherEnvs = [EnvTypeEnum.PRODUCTION, EnvTypeEnum.PREVIEW, EnvTypeEnum.DEVELOPMENT].filter((a: string) => {
+        //             if (a.toLowerCase().startsWith(req.params.env.toLowerCase()) == false) {
+        //                 return a;
+        //             }
+        //         });
+
+        //         //ensure that app info is updated in other environments where it exists
+        //         otherEnvs.forEach((a) => {
+        //             let otherColl = getAppInfoCollection(a);
+        //             otherColl.replaceOne({ _id: updatedData._id } as any, updatedData, { upsert: false }) //upsert NOT allowed!
+        //         });
+
+        //         res.status(200).send({ payload: updatedData } as ResponseData);
+        //     }
+        //     else {
+        //         throw new Error(`Could not update app info because no such app was found in specified environment`);
+        //     }
+        // }
+        // else {
+        //     throw new Error(`Could not update app info because no valid app info was provided for the operation`);
+        // }
 
 
 
@@ -221,93 +475,6 @@ appInfoRouter.post("/:env/appinfo/add", async (req: Request, res: Response) => {
 
 
 
-appInfoRouter.post("/:env/appinfo/update", async (req: Request, res: Response) => {
-    try {
-        const app: AppInfo = req.body as AppInfo;
-        let env = req.params.env;
-        if (env.toLowerCase() !== EnvTypeEnum.DEVELOPMENT.toLowerCase() && env.toLowerCase() !== "dev") {
-            throw Error("Update action on an existing App can only be performed in development environment");
-        }
-        
-        if (app && app.name.length > 0) {
-            app.lastUpdatedOn = new Date();
-            app.enabled = true;
-            const collection = getAppInfoCollection(req.params.env);
-            
-            //check if app name has special/unwanted characters
-            if(containsSpecialChars([app.name])){
-                throw Error("App name contains special characters that is not allowed.");
-            }
-
-            const foundApps = (await collection.find({ _id: new mongo.ObjectId(app._id?.toString()) } as any).toArray()) as AppInfo[];
-            
-            if (foundApps && foundApps.length > 0) {
-                let updatedData = foundApps[0];
-                updatedData.name = app.name;
-                updatedData.description = app.description;
-                updatedData.enabled = app.enabled;
-                updatedData.lastUpdatedOn = app.lastUpdatedOn;
-
-                await collection.replaceOne({ _id: updatedData._id as any }, updatedData);
-
-                //get other environments
-                let otherEnvs = [EnvTypeEnum.PRODUCTION, EnvTypeEnum.PREVIEW, EnvTypeEnum.DEVELOPMENT].filter((a: string) => {
-                    if (a.toLowerCase().startsWith(req.params.env.toLowerCase()) == false) {
-                        return a;
-                    }
-                });
-
-                //ensure that app info is updated in other environments where it exists
-                otherEnvs.forEach((a) => {
-                    let otherColl = getAppInfoCollection(a);
-                    otherColl.replaceOne({ _id: updatedData._id } as any, updatedData, { upsert: false }) //upsert NOT allowed!
-                });
-
-                res.status(200).send({ payload: updatedData } as ResponseData);
-            }
-            else {
-                throw new Error(`Could not update app info because no such app was found in specified environment`);
-            }
-        }
-        else {
-            throw new Error(`Could not update app info because no valid app info was provided for the operation`);
-        }
-    }
-    catch (e: any) {
-        let resp = {
-            payload: undefined,
-            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
-        }
-        console.error(resp);
-        res.status(500).json(resp);
-    }
-});
-
-
-appInfoRouter.delete("/:env/appinfo/delete", async (req: Request, res: Response) => {
-    try {
-        let env = req.params.env;
-        let appId : string = req.query.appId?.toString() ?? ''
-        if (!appId) {
-            throw new Error(`Input 'appId' cannot be null or empty or undefined`);
-        }
-        let inDelEnv : string = req.query.delEnv?.toString() ?? ''
-        if (!inDelEnv) {
-            throw new Error(`Input 'delEnv' cannot be null or empty or undefined`);
-        }
-        
-        let result = await performAppDelete(env, appId, inDelEnv);
-        res.status(200).send({ payload: result } as ResponseData);
-    }
-    catch (e: any) {
-        let resp = {
-            payload: undefined,
-            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
-        }
-        console.error(resp);
-        res.status(500).json(resp);
-    }
-});
 
 
 

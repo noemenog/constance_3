@@ -366,3 +366,43 @@ dark:
     //     //   },
     // }
 
+
+
+
+
+{
+    "ownerElementId": "686ef5b1212ace5ca8cc7d18",
+    "contextProperties": [],
+    "lastUpdatedOn":ISODate("2025-07-09T23:05:21.854+0000"),
+    "name": "Buck1",
+    "description": "this is the first bucket",
+    "createdOn": ISODate("2025-07-09T23:05:21.854+0000"),
+    "createdBy": "ndubuisi.emenogu@intel.com",
+    "associatedProperties": []
+},
+{
+    "ownerElementId": "686ef5b1212ace5ca8cc7d18",
+    "contextProperties": [],
+    "lastUpdatedOn":ISODate("2025-07-09T23:05:21.854+0000"),
+    "name": "Buck2",
+    "description": "this is the second bucket",
+    "createdOn": ISODate("2025-07-09T23:05:21.854+0000"),
+    "createdBy": "ndubuisi.emenogu@intel.com",
+    "associatedProperties": []
+},
+{
+    "ownerElementId": "686ef5b1212ace5ca8cc7d18",
+    "contextProperties": [],
+    "lastUpdatedOn":ISODate("2025-07-09T23:05:21.854+0000"),
+    "name": "Buck3",
+    "description": "this is the third bucket out of many",
+    "createdOn": ISODate("2025-07-09T23:05:21.854+0000"),
+    "createdBy": "ndubuisi.emenogu@intel.com",
+    "associatedProperties": []
+}
+
+
+Handle: 
+    Permissions
+    App clone
+    Bucket clone

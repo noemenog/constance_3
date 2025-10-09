@@ -1,26 +1,30 @@
-import {ActionSceneEnum, AGS_APP_APPROVER_GROUP_POSTFIX, AGS_APP_NAME, BASIC_NAME_VALIDATION_REGEX, SCENES_MAPPING, 
-    UIMessageType, PermissionActionEnum, CONFIGITEM__Permission_Revoked_Actions } from "../DataModels/Constants";
-import { LoggedInUser, QuickStatus, BasicProperty, User, ConfigItem, ActionPermissionContext, PropertyItem, LoadingSpinnerInfo, BasicKVP } from "../DataModels/HelperModels";
-import { delay, getEnumValuesAsMap, getEnvContext, rfdcCopy } from "./UtilFunctions";
-import {  fetchAppDetails, getPermissionAWGItemsForCurrentUser, getPermissionEntitlementsForCurrentUser, manageAppInfoLock, updateEntitlementWithUser } from "./FetchData";
+import {ActionSceneEnum, AGS_APP_NAME, SCENES_MAPPING, UIMessageType, PermEntityTypeEnum, PermRolesEnum, EnvTypeEnum, PERM_ROLES_RELATED_DATA_MAP, CONFIGITEM__Permission_Revoked_Actions, PermissionAppLevelActionEnum, PermissionBucketLevelActionEnum, PermissionConfigLevelActionEnum} from "../DataModels/Constants";
+import { LoggedInUser, QuickStatus, BasicProperty, User, ConfigItem, PropertyItem, LoadingSpinnerInfo, BasicKVP, Bucket, AppInfo } from "../DataModels/ServiceModels";
+import { delay, getEnumValuesAsArray, getEnumValuesAsMap, getEnvContext, getRoleForEnv, rfdcCopy } from "./UtilFunctions";
+import {  createApproverWG, createEntitlements, deleteAppInfo, deleteAWG, deleteBucket, deleteEntitlements, fetchAppDetails, getEntitlementInfoByName, getPermissionAWGItemsForCurrentUser, getPermissionEntitlementsForCurrentUser, manageAppInfoLock, updateEntitlementWithUser } from "./FetchData";
 import { useCStore } from "../DataModels/ZuStore";
 import { sort } from "fast-sort";
-import { AppInfo } from "../DataModels/ServiceModels";
 
 
 
+export function getEntitlementName(appID: string, permRole: PermRolesEnum, type: PermEntityTypeEnum, bucketId?: string ){
+    //IMPORTANT!! -- Do Not Change! If you change the naming scheme, you break the app - simple as that!
+    let entPostFix = PERM_ROLES_RELATED_DATA_MAP.get(permRole)?.[1] || ""
+    if(entPostFix.trim().length === 0) {
+        console.error("ERROR!!!  No Entitlement postfix found for provided permission category!!!!")
+    }
+
+    let value = (type == PermEntityTypeEnum.APP) 
+        ? AGS_APP_NAME + "_" + appID + "_" + entPostFix 
+        : AGS_APP_NAME + "_" + appID + "_" + bucketId?.slice(-17) + "_" + entPostFix 
+
+    return value
+}
 
 
-export function getEntitlementName(projectId: string, roleId: string){ return getPermissionElementName(projectId, roleId) }
-export function getApproverWGName(projectId: string) { return getPermissionElementName(projectId, AGS_APP_APPROVER_GROUP_POSTFIX) }
-function getPermissionElementName(projectId: string, role: string) : string {
-    //IMPORTANT!! -- Do Not Change!
-    //If you change the naming scheme, you break the app - simple as that!
-    if(!projectId || !role) { return ''; }
-    let permEnv = getEnvContext().permContext
-    let permElementName = AGS_APP_NAME + "_" + permEnv + "_" + projectId + "_" + role  
-    permElementName = permElementName.toUpperCase()
-    return permElementName;  //ex: SPIDER_DEV_PSL_65f8d8d0832e0afb107f2c82
+export function getApproverWGName(appID: string) {
+    //IMPORTANT!! -- Do Not Change! If you change the naming scheme, you break the app - simple as that!
+    return AGS_APP_NAME + "_AWG_"+ appID; 
 }
 
 
@@ -29,15 +33,14 @@ export async function loadEntitlementsForLoggedInUser(loggedInUser: LoggedInUser
     if(mainPermMapResp && mainPermMapResp.size > 0) {
         loggedInUser.perms = mainPermMapResp; 
     }
-
     return loggedInUser;
 }
 
 
-export async function loadAWGStatusForLoggedInUser(loggedInUser: LoggedInUser, projectId: string) : Promise<LoggedInUser> {
-    let awgName = getApproverWGName(projectId as string);
-    if(projectId && (projectId.trim().length > 0) && loggedInUser && loggedInUser.perms && (loggedInUser.perms.has(awgName) === false)) {
-        let awgStatus : QuickStatus<any> = await getPermissionAWGItemsForCurrentUser(loggedInUser as LoggedInUser, projectId);
+export async function loadAWGStatusForLoggedInUser(loggedInUser: LoggedInUser, ownerElementId: string) : Promise<LoggedInUser> {
+    let awgName = getApproverWGName(ownerElementId as string);
+    if(ownerElementId && (ownerElementId.trim().length > 0) && loggedInUser && loggedInUser.perms && (loggedInUser.perms.has(awgName) === false)) {
+        let awgStatus : QuickStatus<any> = await getPermissionAWGItemsForCurrentUser(loggedInUser as LoggedInUser, ownerElementId);
         let awgName = awgStatus?.message;
         let newLoggedInUser = rfdcCopy<LoggedInUser>(loggedInUser as LoggedInUser) as LoggedInUser
         if(awgStatus && (awgStatus.isSuccessful === true) && (awgName.trim().length > 0)) {
@@ -55,273 +58,227 @@ export async function loadAWGStatusForLoggedInUser(loggedInUser: LoggedInUser, p
 }
 
 
-// export function getInitPermRolesArray(permCtxConfigRoles: any[]) : Array<BasicProperty> {
-//     let idChecker = new Set<string>();
-//     let usersRolesArr = new Array<BasicProperty>()
-//     if(permCtxConfigRoles && permCtxConfigRoles.length > 0) {
-//         let confRoles = rfdcCopy(permCtxConfigRoles) as any
-//         confRoles = confRoles.sort((a: any, b: any) => a.displayName < b.displayName ? -1 : 1);
-//         for(let roleEntry of confRoles) {
-//             if(roleEntry.id && roleEntry.id.trim().length > 0 && roleEntry.displayName && roleEntry.displayName.trim().length > 0 && (BASIC_NAME_VALIDATION_REGEX.test(roleEntry.id) === true) ) { 
-//                 if(idChecker.has(roleEntry.id) === false) {
-//                     let role: BasicProperty = { id: roleEntry.id, name: roleEntry.displayName, value: roleEntry.rank }
-//                     usersRolesArr.push(role)
-//                     idChecker.add(role.id);
-//                 }
-//             }
-//         }
-//     }
-//     return usersRolesArr
-// }
+export async function getPreloadPermissions(appId: string, bucketList: Bucket[]) : Promise<Map<string, Map<PermRolesEnum, User[]>>> {
+    const chunkSize = 20;
+    let promises = new Array<Promise<any>>();
+    let entNameToOwnerElementId = new Map<string, string>();
+    let entNameToRole = new Map<string, PermRolesEnum>();
+    let finalMap = new Map<string, Map<PermRolesEnum, User[]>>();
 
+    finalMap.set(appId, new Map());
 
+    for(let appRoleItem of [PermRolesEnum.APP_ADMIN, PermRolesEnum.DEV_ENV_ACCESS, PermRolesEnum.PRE_ENV_ACCESS, PermRolesEnum.PROD_ENV_ACCESS]) {
+        let appLevelEntitlementName: string = getEntitlementName(appId, appRoleItem, PermEntityTypeEnum.APP);
+        finalMap.get(appId)!.set(appRoleItem, new Array<User>());
+        entNameToOwnerElementId.set(appLevelEntitlementName.toUpperCase(), appId);
+        entNameToRole.set(appLevelEntitlementName.toUpperCase(), appRoleItem);
+        promises.push(getEntitlementInfoByName(appLevelEntitlementName, true));
+    }
 
-// export async function getPermActionSceneData(permissionRoles: BasicProperty[], confs: ConfigItem[]) : Promise<Map<ActionSceneEnum, Map<PermissionActionEnum, ActionPermissionContext>>> {
-//     let finalMap = new Map<ActionSceneEnum, Map<PermissionActionEnum, ActionPermissionContext>>() //Important - at worst case, this will retuen a valid empty map - never null/undefined
+    for(let bucket of bucketList) {
+        finalMap.set(bucket._id?.toString() as string, new Map());
+        for(let bucketRoleItem of [PermRolesEnum.BUCKET_ADMIN, PermRolesEnum.BUCKET_READ_ONLY]) {
+            let bucketLevelEntitlementName: string = getEntitlementName(appId, bucketRoleItem, PermEntityTypeEnum.BUCKET, bucket._id?.toString() as string);
+            finalMap.get(bucket._id?.toString() as string)!.set(bucketRoleItem, new Array<User>());
+            entNameToOwnerElementId.set(bucketLevelEntitlementName.toUpperCase(), bucket._id?.toString() as string);
+            entNameToRole.set(bucketLevelEntitlementName.toUpperCase(), bucketRoleItem);
+            promises.push(getEntitlementInfoByName(bucketLevelEntitlementName, true));
+        }
+    }
     
-//     const knownActions = getEnumValuesAsMap(PermissionActionEnum, true);
-//     let permActionCtxConf : any = confs.find(a => a.configName === CONFIGITEM__Permission_Action_Context)?.configValue ?? undefined
+    for (let i = 0; i < promises.length; i += chunkSize) {
+        const chunk = promises.slice(i, i + chunkSize);
+        await Promise.all(chunk).then((promiseVals) => {
+            if(promiseVals && promiseVals.length > 0) {
+                for(let entitlementResp of promiseVals) {
+                    let personArr: User[] = [];
+                    if (entitlementResp && entitlementResp.displayName) {
+                        let ownerId = entNameToOwnerElementId.get(entitlementResp.displayName.trim().toUpperCase())
+                        let role = entNameToRole.get(entitlementResp.displayName.trim().toUpperCase())
+                        if(ownerId && role) {
+                            if(entitlementResp.members && entitlementResp.members.length > 0) {
+                                for(let x = 0; x < entitlementResp.members.length; x++){
+                                    let member = entitlementResp.members[x]
+                                    personArr.push({ idsid: '', email: member.userPrincipalName, wwid: member.jobTitle } as User);
+                                }
+                            }
+                            finalMap.get(ownerId)?.set(role, personArr)
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    return finalMap
+}
+
+
+export async function setupPermissionsForNewElement(loggedInUser: LoggedInUser, element: AppInfo|Bucket, type: PermEntityTypeEnum, isClonedElement: boolean) : Promise<[boolean, AppInfo|Bucket]> {
+    let store = useCStore.getState(); //in this func, store is expected to always be defined (not null and not undefined)
+    let elementId: string = element._id.toString() as string;
+    let itemTypeStr = type === PermEntityTypeEnum.APP ? "AppInfo" : "Bucket";
     
-//     if(permissionRoles && permissionRoles.length > 0) {
-//         let roleIdSet = new Set<string>(permissionRoles.map(x => x.id.trim().toUpperCase()));
-//         if(permActionCtxConf && permActionCtxConf.length > 0) {
-//             for(let entry of permActionCtxConf) {
-//                 let sceneActionsChecker = new Set<string>()
-//                 if(SCENES_MAPPING.has(entry.scene.toString().toLowerCase())) {
-//                     let scene = SCENES_MAPPING.get(entry.scene.toString().toLowerCase()) as ActionSceneEnum;
-//                     if(entry.actions && entry.actions.length > 0) {
-//                         for(let k = 0; k < entry.actions.length; k++) {
-//                             let actionEntry = entry.actions[k]
-//                             if(actionEntry.names && actionEntry.names.length > 0 && actionEntry.enabled && actionEntry.enabled.toString().trim().toLowerCase() === "true") {
-//                                 for(let a = 0; a < actionEntry.names.length; a++) {
-//                                     let actionNameStr = actionEntry.names[a]?.toString()?.trim()?.toUpperCase(); //IMPORTANT - this needs to remain as uppercase!!!
-//                                     if(actionNameStr.trim().length > 0 && knownActions.has(actionNameStr) && (sceneActionsChecker.has(actionNameStr) === false)) {  //checking name with basic regex
-//                                         let relevRoles = actionEntry.enabledRoles.map((x: string) => x.toUpperCase())
-//                                         let rolesToSet = new Set<string>(relevRoles.filter((r: string) => roleIdSet.has(r)))
-//                                         let apc : ActionPermissionContext = {
-//                                             id: `${k}`,
-//                                             category: scene,
-//                                             name: actionNameStr as PermissionActionEnum,
-//                                             enabled: actionEntry.enabled as boolean,
-//                                             enabledRoles: rolesToSet
-//                                         }
-
-//                                         let val = (finalMap.get(scene) ?? new Map<PermissionActionEnum, ActionPermissionContext>()).set(apc.name, apc)
-//                                         finalMap.set(scene, val)
-//                                         sceneActionsChecker.add(actionNameStr);
-//                                     }
-//                                 }
-//                             }
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//     }
-
-//     return finalMap;
-// }
-
-
-
-// export async function getPreloadPermissions(projectId: string, userRoles: BasicProperty[]) : Promise<Map<string, User[]>> {
-//     let promises = new Array<Promise<any>>();
-//     let entNameToRoleId = new Map<string, string>();
-//     let finalMap = new Map<string, User[]>();
-
-//     for(let roleItem of userRoles) {
-//         let entitlementName: string = getEntitlementName(projectId, roleItem.id);
-//         finalMap.set(roleItem.id, new Array<User>());
-//         entNameToRoleId.set(entitlementName.toUpperCase(), roleItem.id);
-//         promises.push(getEntitlementInfoByName(entitlementName, true));
-//     }
-
-//     await Promise.all(promises).then((promiseVals) => {
-//         if(promiseVals && promiseVals.length > 0) {
-//             for(let entitlementResp of promiseVals) {
-//                 let personArr: User[] = [];
-//                 if (entitlementResp && entitlementResp.displayName) {
-//                     let roleId = entNameToRoleId.get(entitlementResp.displayName.trim().toUpperCase())
-//                     if(roleId) {
-//                         if(entitlementResp.members && entitlementResp.members.length > 0) {
-//                             for(let x = 0; x < entitlementResp.members.length; x++){
-//                                 let member = entitlementResp.members[x]
-//                                 personArr.push({ idsid: '', email: member.userPrincipalName, wwid: member.jobTitle } as User);
-//                             }
-//                         }
-//                         finalMap.set(roleId, personArr)
-//                     }
-//                 }
-//             }
-//         }
-//     })
-
-//     return finalMap
-// }
-
-
-// export async function setupPermissionsForNewProject(loggedInUser: LoggedInUser, project: Project, isClonedProject: boolean) : Promise<boolean> {
-//     let store = useCStore.getState(); //in this func, store is expected to always be defined (not null and not undefined)
-
-//     if(project) {
-//         let deleteAndBail = false
-        
-//         if(project.contextProperties && project.contextProperties.length > 0) {
-//             let permRolesConfData = project.contextProperties.find(a => a.name.toUpperCase() === CONF_PERMISSION_ROLES)?.value //NOTE: for new project, perm context is added to contextProps
-//             if(permRolesConfData && permRolesConfData.length > 0) {
-//                 let usersPermRoleArray : BasicProperty[] = getInitPermRolesArray(permRolesConfData)
-//                 store.setLoadingSpinnerCtx({enabled: true, text: `Now setting up roles and permissions for newly ${isClonedProject ? 'cloned' : 'created'} project. Please wait...`} as LoadingSpinnerInfo)
-//                 store.displayQuickMessage(UIMessageType.INFO_MSG, `Now setting up roles and permissions for newly ${isClonedProject ? 'cloned' : 'created'} project. This can take up to one minute (approx). Please be patient...`, 50000)
-//                 let permActionResult : QuickStatus<any> = await handleCreationOfNewProjectPerms(loggedInUser as LoggedInUser, project, usersPermRoleArray).finally(() => { store.cancelLoadingSpinnerCtx() })
-//                 if(permActionResult.isSuccessful === true) {
-//                     store.setLoadingSpinnerCtx({enabled: true, text: `Retrieving AWG permissions for newly ${isClonedProject ? 'cloned' : 'created'} project. Please wait...`} as LoadingSpinnerInfo)
-//                     store.displayQuickMessage(UIMessageType.INFO_MSG, `Now getting AWG permissions for newly ${isClonedProject ? 'cloned' : 'created'} project. This will take some time. Please be patient...`, 10000)
-//                     //This handles scenario where project has just been created - we get the awg info right away before switching page to new proj
-//                     let adjUser = await loadAWGStatusForLoggedInUser(loggedInUser as LoggedInUser, project._id.toString() as string).finally(() => { store.cancelLoadingSpinnerCtx() })
-//                     if(adjUser) { 
-//                         store.setLoggedInUser(adjUser); 
-//                     }
-//                 }
-//                 else {
-//                     store.displayQuickMessage(UIMessageType.ERROR_MSG, `${permActionResult.message}. Please try again`);
-//                     deleteAndBail = true
-//                 }
+    if(elementId && (elementId.trim().length > 0) && loggedInUser) {
+        let deleteAndBail = false
+        store.setLoadingSpinnerCtx({enabled: true, text: `Now setting up roles and permissions for newly ${isClonedElement ? 'cloned' : 'created'} ${itemTypeStr}. Please wait...`} as LoadingSpinnerInfo)
+        store.displayQuickMessage(UIMessageType.INFO_MSG, `Now setting up roles and permissions for newly ${isClonedElement ? 'cloned' : 'created'} ${itemTypeStr}. This can take up to one minute (approx). Please be patient...`, 50000)
+        let permActionResult : QuickStatus<any> = await handleCreationOfNewPerms(loggedInUser as LoggedInUser, element, type).finally(() => { store.cancelLoadingSpinnerCtx() })
+        if(permActionResult.isSuccessful === true) {
+            store.setLoadingSpinnerCtx({enabled: true, text: `Retrieving AWG permissions for newly ${isClonedElement ? 'cloned' : 'created'} ${itemTypeStr}. Please wait...`} as LoadingSpinnerInfo)
+            store.displayQuickMessage(UIMessageType.INFO_MSG, `Now getting AWG permissions for newly ${isClonedElement ? 'cloned' : 'created'} ${itemTypeStr}. This will take some time. Please be patient...`, 10000)
+            //This handles scenario where element has just been created - we get the awg info right away before switching page to new elem
+            let adjUser = await loadAWGStatusForLoggedInUser(loggedInUser as LoggedInUser, elementId).finally(() => { store.cancelLoadingSpinnerCtx() })
+            if(adjUser) { 
+                store.setLoggedInUser(adjUser); 
+            }
+        }
+        else {
+            store.displayQuickMessage(UIMessageType.ERROR_MSG, `${permActionResult.message}. Please try again`);
+            deleteAndBail = true
+        }
                 
-//             }
-//             else {
-//                 store.displayQuickMessage(UIMessageType.ERROR_MSG, `Project ${isClonedProject ? 'cloning' : 'creation'} was not successful. Permissions context was not retrieved.`);
-//                 deleteAndBail = true
-//             }
-//         }
-//         else {
-//             store.displayQuickMessage(UIMessageType.ERROR_MSG, `Project ${isClonedProject ? 'cloning' : 'creation'} was not successful. Permissions were not setup due to missing contextual information.`);
-//             deleteAndBail = true
-//         }        
+        if(deleteAndBail) {
+            if(type === PermEntityTypeEnum.APP) {
+                deleteAppInfo(EnvTypeEnum.DEVELOPMENT, element as AppInfo, "ALL");
+            }
+            else if(type === PermEntityTypeEnum.BUCKET) {
+                deleteBucket(EnvTypeEnum.DEVELOPMENT, element as Bucket, "ALL");
+            }
+            return [false, element];
+        }
+    }
+
+    store.cancelLoadingSpinnerCtx();  //for good measures
+    return [true, element];
+}
+
+
+
+async function handleCreationOfNewPerms(loggedInUser: LoggedInUser, element: AppInfo|Bucket, type: PermEntityTypeEnum) : Promise<QuickStatus<any>> {
+    let inputElemId = element._id?.toString() as string;
+    let awgName = getApproverWGName(element.ownerElementId);
+
+    try {
+        if(type === PermEntityTypeEnum.APP) {
+            let appRoleArr = [PermRolesEnum.APP_ADMIN, PermRolesEnum.DEV_ENV_ACCESS, PermRolesEnum.PRE_ENV_ACCESS, PermRolesEnum.PROD_ENV_ACCESS]
+            let awgInfo = await createApproverWG(awgName, loggedInUser)
+            if(awgInfo) {
+                let roleIdToEntNameMapping = new Map<PermRolesEnum, string>()
+                for(let appRoleItem of appRoleArr) {
+                    let appLevEntName = getEntitlementName(inputElemId, appRoleItem, type)
+                    roleIdToEntNameMapping.set(appRoleItem, appLevEntName)
+                }
+                if(roleIdToEntNameMapping.size > 0) {
+                    let appLevEntNameToIdMapping = await createEntitlements(Array.from(roleIdToEntNameMapping.values()), awgName, element.name)
+                    if(!appLevEntNameToIdMapping || appLevEntNameToIdMapping.size === 0) {
+                        return { isSuccessful: false, message: `Failed to setup permissions for new appInfo. An unknown error occured during call to entitlement management system` }
+                    }
+                }
+            }
+        }
+    
+        if(type === PermEntityTypeEnum.BUCKET) {
+            let buckRoleArr = [PermRolesEnum.BUCKET_ADMIN, PermRolesEnum.BUCKET_READ_ONLY]
+            let bucketLevEntNameSet = new Set<string>()
+            for(let bucketRoleItem of buckRoleArr) {
+                let bucketLevEntName = getEntitlementName(element.ownerElementId, bucketRoleItem, type, inputElemId)
+                bucketLevEntNameSet.add(bucketLevEntName)
+            }
+
+            if(bucketLevEntNameSet.size > 0) {
+                let bucketLevEntNameToIdMapping = await createEntitlements(Array.from(bucketLevEntNameSet), awgName, element.name)
+                if(!bucketLevEntNameToIdMapping || bucketLevEntNameToIdMapping.size === 0) {
+                    return { isSuccessful: false, message: `Failed to setup permissions for new bucket. An unknown error occured during call to entitlement management system` }
+                }
+            }
+        }
+    }
+    catch(error: any) {
+        deletePermissionElements(element, type);
+        return { isSuccessful: false, message: `Failed to setup permissions for newly created ${type === PermEntityTypeEnum.APP ? "app" : "bucket"}.  ${error.message}` }
+    }
+    
+    return { isSuccessful: true, message: "" }
+}
+
+
+
+export async function updateOwnerElementPermissions(loggedInUser: LoggedInUser, appInfo: AppInfo, usersPerRoleMapping: Map<string, Map<PermRolesEnum, User[]>>) : Promise<QuickStatus<any>> {
+    let errRoles = new Array<string>();
+    try {
+        let inputElemId = appInfo._id?.toString() as string;
         
-//         if(deleteAndBail) {
-//             deleteProject(project._id.toString() as string);
-//             return false;
-//         }
-//     }
+        for (let [ownerElementId, roleToUserMap] of usersPerRoleMapping) {
+            let entityType = (ownerElementId === appInfo._id?.toString() as string) ? PermEntityTypeEnum.APP : PermEntityTypeEnum.BUCKET;
+            let optionalBucketId = (ownerElementId === appInfo._id?.toString() as string) ? undefined : ownerElementId
+            for (let [role, users] of roleToUserMap) {
+                let entName = getEntitlementName(inputElemId, role, entityType, optionalBucketId)
+                let wwidList = users.map(a => a.wwid) ?? []
 
-//     store.cancelLoadingSpinnerCtx();  //for good measures
-//     return true;
-// }
+                let entObj : any = await getEntitlementInfoByName(entName)
+                if(entObj && entObj.id && entObj.displayName.toUpperCase() === entName.toUpperCase()){
+                    let entId = entObj.id as string
+                    let existingEntMembers = entObj?.members?.map((member: any) => member.jobTitle) ?? new Array<string>()
+                    
+                    updateEntitlementWithUser(entName, entId, existingEntMembers, wwidList, loggedInUser);
+                } 
+                else {
+                    errRoles.push(`${ownerElementId}:${role}`)
+                }
+            }
+        }
+    }
+    catch(error: any) {
+        return { isSuccessful: false, message: `Failed to update all permission elements for appInfo --- ${error.message}` }
+    }
 
-
-
-// async function handleCreationOfNewProjectPerms(loggedInUser: LoggedInUser, project: Project, permRoleArray: BasicProperty[]) : Promise<QuickStatus<any>> {
-//     try {
-//         let projectId = project._id?.toString() as string;
-//         let awgName = getApproverWGName(projectId)
-//         let awgInfo: any = await createApproverWG(awgName, loggedInUser)
-//         // if(awgInfo) {
-//         //     let roleIdToEntNameMapping = new Map<string, string>()
-            
-//         //     for (let role of permRoleArray) {
-//         //         let entName = getEntitlementName(projectId, role.id)
-//         //         roleIdToEntNameMapping.set(role.id, entName)
-//         //     }
-
-//         //     if(roleIdToEntNameMapping.size > 0) {
-//         //         let entNameToIdMapping = await createEntitlements(Array.from(roleIdToEntNameMapping.values()), awgName, project.name)
-//         //         if(entNameToIdMapping && entNameToIdMapping.size > 0) {
-//         //             let permRolesProperty = {
-//         //                 id: crypto.randomUUID(),
-//         //                 name: ProjectPropertyCategoryEnum.PERMISSION_ROLES,
-//         //                 displayName: ProjectPropertyCategoryEnum.PERMISSION_ROLES,
-//         //                 category: ProjectPropertyCategoryEnum.PERMISSION_ROLES,
-//         //                 editable: false,
-//         //                 enabled: true,
-//         //                 value: permRoleArray,
-//         //             } as PropertyItem
-                     
-//         //             let updatedProj = await updateKeyProjectAspect(project?._id.toString() as string, ProjectPropertyCategoryEnum.PERMISSION_ROLES, permRolesProperty)
-//         //             if(!updatedProj) {
-//         //                 return { isSuccessful: false, message: `Failed to setup permissions for new project. Could not persist roles defined for project` }
-//         //             }
-//         //         }
-//         //         else {
-//         //             return { isSuccessful: false, message: `Failed to setup permissions for new project. An unknown error occured during call to entitlement management system` }
-//         //         }
-//         //     }
-//         // }
-//     }
-//     catch(error: any) {
-//         deleteProjectPermissionElements(loggedInUser, project, permRoleArray);
-//         return { isSuccessful: false, message: `Failed to setup permissions for new project.  ${error.message}` }
-//     }
-
-//     return { isSuccessful: true, message: "" }
-// }
+    if(errRoles.length > 0) {
+        return { isSuccessful: false, message: `Failed to update all permission elements for appInfo. Errored Roles: ${errRoles.join(", ")}` }
+    }
+    else {
+        return { isSuccessful: true, message: "" }
+    }
+}
 
 
 
-// export async function updateProjectPermissions(loggedInUser: LoggedInUser, project: Project, usersPerRoleMapping: Map<string, User[]>) : Promise<QuickStatus<any>> {
-//     let errRoles = new Array<string>();
-//     try {
-//         let projectId = project._id?.toString() as string;
+export async function deletePermissionElements(element: AppInfo|Bucket, type: PermEntityTypeEnum) : Promise<QuickStatus<any>> {
+    try {
+        let inputElemId = element._id?.toString() as string;
         
-//         for (let [roleId, users] of usersPerRoleMapping) {
-//             let entName = getEntitlementName(projectId, roleId)
-//             let wwidList = users.map(a => a.wwid) ?? []
+        if(type === PermEntityTypeEnum.APP) {
+            let awgName = getApproverWGName(element.ownerElementId);
+            await deleteAWG(awgName);
+        }
 
-//             let entObj : any = await getEntitlementInfoByName(entName)
-//             if(entObj && entObj.id && entObj.displayName.toUpperCase() === entName.toUpperCase()){
-//                 let entId = entObj.id as string
-//                 let existingEntMembers = entObj?.members?.map((member: any) => member.jobTitle) ?? new Array<string>()
-                
-//                 updateEntitlementWithUser(entName, entId, existingEntMembers, wwidList, loggedInUser);
-//             } 
-//             else {
-//                 errRoles.push(roleId)
-//             }
-//         }
-//     }
-//     catch(error: any) {
-//         return { isSuccessful: false, message: `Failed to update all permission elements for project --- ${error.message}` }
-//     }
+        let entNameSet = new Set<string>();
+        let optionalBucketId = (type === PermEntityTypeEnum.APP) ? undefined : inputElemId;
+        let roleArr = (type === PermEntityTypeEnum.APP) 
+            ? [PermRolesEnum.APP_ADMIN, PermRolesEnum.DEV_ENV_ACCESS, PermRolesEnum.PRE_ENV_ACCESS, PermRolesEnum.PROD_ENV_ACCESS] 
+            : [PermRolesEnum.BUCKET_ADMIN, PermRolesEnum.BUCKET_READ_ONLY];
+        
+        for (let role of roleArr) {
+            let entName = getEntitlementName(inputElemId, role, type, optionalBucketId)
+            entNameSet.add(entName);
+        }
 
-//     if(errRoles.length > 0) {
-//         return { isSuccessful: false, message: `Failed to update all permission elements for project. Role-Ids: ${errRoles.join(", ")}` }
-//     }
-//     else {
-//         return { isSuccessful: true, message: "" }
-//     }
-// }
+        if (entNameSet && entNameSet.size > 0) {
+            deleteEntitlements(Array.from(entNameSet));
+        }
+    }
+    catch(error: any) {
+        return { isSuccessful: false, message: `Failed to completely delete permission elements.  ${error.message}` }
+    }
 
+    return { isSuccessful: true, message: "" }
+}
 
 
-// export async function deleteProjectPermissionElements(loggedInUser: LoggedInUser, project: Project, userRoles: BasicProperty[]) : Promise<QuickStatus<any>> {
-//     try {
-//         let projectId = project._id?.toString() as string;
-//         let awgName = getApproverWGName(projectId)
-//         await deleteAWG(awgName);
-
-//         let entNameSet = new Set<string>();
-//         for (let role of userRoles) {
-//             let entName = getEntitlementName(projectId, role.id)
-//             entNameSet.add(entName);
-//         }
-
-//         if (entNameSet && entNameSet.size > 0) {
-//             deleteEntitlements(Array.from(entNameSet));
-//         }
-
-//         //TODO: delete any permissions from graph call that pertains to this project
-//     }
-//     catch(error: any) {
-//         return { isSuccessful: false, message: `Failed to completely delete permission elements for project.  ${error.message}` }
-//     }
-
-//     return { isSuccessful: true, message: "" }
-// }
-
-
-
-export function isUserInApproverWGForProject(loggedInUser: LoggedInUser|undefined, app: AppInfo) : boolean {
-    if(app && app._id) {
-        let awgName = getApproverWGName(app._id?.toString() as string)
+//====================================================================================================================
+export function isUserInApproverWGForOwnerElement(loggedInUser: LoggedInUser|undefined, appInfo: AppInfo) : boolean {
+    if(appInfo && appInfo._id) {
+        let awgName = getApproverWGName(appInfo._id?.toString() as string)
         if(awgName) {
             if(loggedInUser) {
                 if(loggedInUser.perms.has(awgName)){
@@ -337,45 +294,118 @@ export function isUserInApproverWGForProject(loggedInUser: LoggedInUser|undefine
 }
 
 
+export function isUserApprovedForCoreAction(loggedInUser: LoggedInUser, appInfo: AppInfo, 
+    actionType: PermissionAppLevelActionEnum | PermissionBucketLevelActionEnum | PermissionConfigLevelActionEnum, 
+    considerAWG: boolean = true, sourceBucket: Bucket | null = null, 
+    targetEnv: string | EnvTypeEnum | null = null, targetBucketId: string | null = null) : boolean {
 
-export function isUserApprovedForCoreAction(loggedInUser: LoggedInUser, appInfo: AppInfo, actionType: PermissionActionEnum, considerAWG: boolean = true) : boolean {
+    let appId = appInfo._id?.toString() as string;
     let isInvalidRootScene = false;
     let wtfMode = false;
-    let roleIdList = new Array<string>();
+    let neededAppRoleList = new Set<string>();
+    let neededConfigRoleList = new Set<string>();
+
     let store = useCStore.getState(); //in this func, store is expected to always be defined (not null and not undefined)
 
     if(loggedInUser && loggedInUser.perms) {
-        //check for app wide blockage
-        if(store.initConfigs && store.initConfigs.length > 0) {
-            let praList : string[] = store.initConfigs.find(a => a.configName === CONFIGITEM__Permission_Revoked_Actions)?.configValue ?? [];
-            if(praList && praList.length > 0) {
-                if(praList.some(x => x.trim().toUpperCase() === actionType.trim().toUpperCase())) {
-                    store.displayQuickMessage(UIMessageType.ERROR_MSG, `Hey ${loggedInUser?.givenName}... the intended action [${actionType.toUpperCase()}] has been disabled `
-                    + `entirely. Please contact developer or file a ticket. `);
-                    return false;
-                }
-            }
+        
+        //check for blocked actions and also check if user is in AWG
+        let { isSuccessful, message } = checkBlockadeAndApproverWG(loggedInUser, appInfo, actionType, considerAWG);
+        if (isSuccessful === false && message && message.trim().length > 0) {
+            store.displayQuickMessage(UIMessageType.ERROR_MSG, message);
+            return false;
+        }
+        else if(isSuccessful === true) {
+            return true;
         }
 
-        //check for approver WG
-        if(considerAWG === true) {
-            let isInAWG = isUserInApproverWGForProject(loggedInUser, appInfo);
-            if(isInAWG) { 
-                return true; 
-            }
-        }
-        
         //check normal role based permission
         if(store.menuCurrentScene) {
             if(store.menuCurrentScene !== ActionSceneEnum.ROOT) {
-                if(store.actionScenePermContextMap && store.actionScenePermContextMap.has(store.menuCurrentScene)) {
-                    let actionPermCtx: ActionPermissionContext|undefined = store.actionScenePermContextMap.get(store.menuCurrentScene)?.get(actionType);
-                    if(actionPermCtx && actionPermCtx.enabled && actionPermCtx.enabledRoles && actionPermCtx.enabledRoles.size > 0) {
-                        for(let roleId of actionPermCtx.enabledRoles) {
-                            roleIdList.push(roleId)
-                            let ent = getEntitlementName(appInfo._id?.toString() as string, roleId)
-                            if(loggedInUser.perms.has(ent)) {
-                                return true
+
+                let appLevActions = getEnumValuesAsArray(PermissionAppLevelActionEnum);
+                let bucketLevActions = getEnumValuesAsArray(PermissionBucketLevelActionEnum);
+                let configLevActions = getEnumValuesAsArray(PermissionConfigLevelActionEnum);
+
+                let appAdminEntName = getEntitlementName(appId, PermRolesEnum.APP_ADMIN, PermEntityTypeEnum.APP)
+
+                if(appLevActions.has(actionType)) {
+                    neededAppRoleList.add(PermRolesEnum.APP_ADMIN)
+                    if(loggedInUser.perms.has(appAdminEntName)) {
+                        return true
+                    }
+                }
+                
+                else if(bucketLevActions.has(actionType) || configLevActions.has(actionType)) {
+                    if(sourceBucket && sourceBucket._id) {     
+                        neededAppRoleList.add(PermRolesEnum.APP_ADMIN)
+                        if(loggedInUser.perms.has(appAdminEntName)) {
+                            return true
+                        }
+                        
+                        let srcEnvRole = getRoleForEnv(store.selectedEnvironment)
+                        if(srcEnvRole) {
+                            let srcEnvEntName = getEntitlementName(appId, srcEnvRole, PermEntityTypeEnum.APP)
+                            let srcBuckAdminEntName = getEntitlementName(appId, PermRolesEnum.BUCKET_ADMIN, PermEntityTypeEnum.BUCKET, sourceBucket._id?.toString() as string)
+                            
+                            if(actionType === PermissionBucketLevelActionEnum.VIEW_BUCKET_CONTENTS) {
+                                neededAppRoleList.add(srcEnvRole)
+                                neededConfigRoleList.add(PermRolesEnum.BUCKET_READ_ONLY)
+                                let buckReadOnlyEntName = getEntitlementName(appId, PermRolesEnum.BUCKET_READ_ONLY, PermEntityTypeEnum.BUCKET, sourceBucket._id?.toString() as string)
+                                if(loggedInUser.perms.has(srcEnvEntName) && (loggedInUser.perms.has(srcBuckAdminEntName) || loggedInUser.perms.has(buckReadOnlyEntName))) {
+                                    return true
+                                }
+                            }
+                            else if(actionType === PermissionBucketLevelActionEnum.EXPORT_BUCKET) {
+                                if(targetEnv && targetEnv.toString().trim().length > 0) {
+                                    let tgtEnvRole = getRoleForEnv(targetEnv)
+                                    if(tgtEnvRole) {
+                                        neededAppRoleList.add(srcEnvRole)
+                                        neededAppRoleList.add(tgtEnvRole)
+                                        neededConfigRoleList.add(PermRolesEnum.BUCKET_ADMIN)
+
+                                        let tgtEnvEntName = getEntitlementName(appId, tgtEnvRole, PermEntityTypeEnum.APP)
+                                        if(loggedInUser.perms.has(srcEnvEntName) && loggedInUser.perms.has(tgtEnvEntName) && loggedInUser.perms.has(srcBuckAdminEntName)) {
+                                            return true
+                                        }
+                                    }
+                                }
+                            }
+                            else if(actionType === PermissionConfigLevelActionEnum.MOVE_CONFIG) {
+                                if(targetBucketId && targetBucketId.toString().trim().length > 0) {
+                                    neededAppRoleList.add(srcEnvRole)
+                                    neededConfigRoleList.add(PermRolesEnum.BUCKET_ADMIN)
+
+                                    let tgtBuckEntName = getEntitlementName(appId, PermRolesEnum.BUCKET_ADMIN, PermEntityTypeEnum.BUCKET, targetBucketId)
+                                    if(loggedInUser.perms.has(srcEnvEntName) && loggedInUser.perms.has(srcBuckAdminEntName) && loggedInUser.perms.has(tgtBuckEntName)) {
+                                        return true
+                                    }
+                                }
+                            }
+                            else if(actionType === PermissionConfigLevelActionEnum.COMPARE_CONFIG) {
+                                if(targetEnv && targetEnv.toString().trim().length > 0) {
+                                    let tgtEnvRole = getRoleForEnv(targetEnv)
+                                    if(tgtEnvRole) {
+                                        neededAppRoleList.add(srcEnvRole)
+                                        neededAppRoleList.add(tgtEnvRole)
+                                        neededConfigRoleList.add(PermRolesEnum.BUCKET_ADMIN)
+                                        neededConfigRoleList.add(PermRolesEnum.BUCKET_READ_ONLY)
+
+                                        let tgtEnvEntName = getEntitlementName(appId, tgtEnvRole, PermEntityTypeEnum.APP)
+                                        let srcBuckReadOnlyEntName = getEntitlementName(appId, PermRolesEnum.BUCKET_READ_ONLY, PermEntityTypeEnum.BUCKET, sourceBucket._id?.toString() as string)
+                            
+                                        if(loggedInUser.perms.has(srcEnvEntName) && loggedInUser.perms.has(tgtEnvEntName)) { 
+                                            if(loggedInUser.perms.has(srcBuckAdminEntName) || loggedInUser.perms.has(srcBuckReadOnlyEntName)) {
+                                                return true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else {
+                                if(loggedInUser.perms.has(srcBuckAdminEntName)) {
+                                    return true
+                                }
                             }
                         }
                     }
@@ -401,13 +431,41 @@ export function isUserApprovedForCoreAction(loggedInUser: LoggedInUser, appInfo:
         store.displayQuickMessage(UIMessageType.ERROR_MSG, `INVALID PERMISSION ASSESSMENT SCENARIO !! - Permission check at root scene is invalid/unexpected!!`);
     }
     else {
-        let addedMsg = (roleIdList.length > 0) 
-            ? `Please request access from App owner. Accepted role Ids: [ ${roleIdList.join(", ")} ]`
-            : ` Please wait a few seconds and retry. System might not have fully retrieved the necessary permissions context data. If error continues, please request access from project owner. `
+        let addedMsg = (neededAppRoleList.size > 0 || neededConfigRoleList.size > 0) 
+            ? `Please request access from App owner. One or mores roles are necessary from each of the following sets: [ ${Array.from(neededAppRoleList).join(", ")} ]; [ ${Array.from(neededConfigRoleList).join(", ")} ]`
+            : ` Please wait a few seconds and retry. System might not have fully retrieved the necessary permissions context data. If error continues, please request access from App owner. `
         store.displayQuickMessage(UIMessageType.ERROR_MSG, `NO PERMISSION !! - Hey ${loggedInUser?.givenName}, you did not have permission for the intended operation. ${addedMsg}`);
     }
 
     return false;
+}
+
+
+
+function checkBlockadeAndApproverWG(loggedInUser: LoggedInUser, appInfo: AppInfo, 
+    actionType: PermissionAppLevelActionEnum | PermissionBucketLevelActionEnum | PermissionConfigLevelActionEnum, considerAWG: boolean) : QuickStatus<any> {
+
+    let store = useCStore.getState(); //in this func, store is expected to always be defined (not null and not undefined)
+    //check for app wide blockage
+    if(store.initConfigs && store.initConfigs.length > 0) {
+        let praList : string[] = store.initConfigs.find(a => a.name === CONFIGITEM__Permission_Revoked_Actions)?.value ?? [];
+        if(praList && praList.length > 0) {
+            if(praList.some(x => x.trim().toUpperCase() === actionType.trim().toUpperCase())) {
+                let errMsg =`Hey ${loggedInUser?.givenName}... the intended action [${actionType.toUpperCase()}] has been disabled entirely. Please contact developer or file a ticket. `;
+                return {isSuccessful: false, message: errMsg}
+            }
+        }
+    }
+
+    //check for approver WG
+    if(considerAWG === true) {
+        let isInAWG = isUserInApproverWGForOwnerElement(loggedInUser, appInfo);
+        if(isInAWG) { 
+            return { isSuccessful: true, message: "" };
+        }
+    }
+
+    return { isSuccessful: false, message: "" };
 }
 
 
@@ -418,14 +476,14 @@ export async function isUserApprovedForUnlockAction(loggedInUser: LoggedInUser, 
     let store = useCStore.getState(); //in this func, store is expected to always be defined (not null and not undefined)
 
     if(loggedInUser && loggedInUser.perms) {
-        let isInAWG = isUserInApproverWGForProject(loggedInUser, appInfo);
+        let isInAWG = isUserInApproverWGForOwnerElement(loggedInUser, appInfo);
         if(isInAWG) { 
             return true; 
         }
 
-        let freshProj = await fetchAppDetails(store.selectedEnvironment, appInfo._id.toString() as string);
-        if(freshProj) {
-            if(freshProj.lockedBy?.trim().toLowerCase() === loggedInUser.email.trim().toLowerCase()) {
+        let freshAppInfo = await fetchAppDetails(store.selectedEnvironment, appInfo._id.toString() as string, false);
+        if(freshAppInfo) {
+            if(freshAppInfo.lockedBy?.trim().toLowerCase() === loggedInUser.email.trim().toLowerCase()) {
                 return true;
             }
         }
@@ -442,11 +500,11 @@ export async function isUserApprovedForUnlockAction(loggedInUser: LoggedInUser, 
             + `Please wait a few seconds and retry action. If this issue becomes frequent, please raise a ticket / notify dev team`);
     }
     else if (noEntityMode) {
-        store.displayQuickMessage(UIMessageType.ERROR_MSG, `INVALID PERMISSION ASSESSMENT SCENARIO !! - Could not load project to determine its lock/unlock status!!`);
+        store.displayQuickMessage(UIMessageType.ERROR_MSG, `INVALID PERMISSION ASSESSMENT SCENARIO !! - Could not load appInfo to determine its lock/unlock status!!`);
     }
     else {
         store.displayQuickMessage(UIMessageType.ERROR_MSG, `NO PERMISSION !! - Hey ${loggedInUser?.givenName}, you do not have permission for the intended operation. `
-            + `Please contact owner to unlock the project. Project owner: [${appInfo.owner.email}] `);
+            + `Please contact owner to unlock the appInfo entity. owner: [${appInfo.owner.email}] `);
     }
 
     return false;
@@ -466,16 +524,16 @@ export async function handleLockAction(appInfo: AppInfo, loggedInUser: LoggedInU
     }
     else {
         //lock scenario
-        if (isUserApprovedForCoreAction(loggedInUser, appInfo, PermissionActionEnum.LOCK_APPINFO) === false) { return; }
+        if (isUserApprovedForCoreAction(loggedInUser, appInfo, PermissionAppLevelActionEnum.LOCK_APPINFO) === false) { return; }
         isLockAction = true;
     }
     
     let actionMsg = isLockAction ? "Lock" : "Unlock";
-    store.setLoadingSpinnerCtx({enabled: true, text: `${actionMsg}ing project. Please wait...`})
+    store.setLoadingSpinnerCtx({enabled: true, text: `${actionMsg}ing AppInfo. Please wait...`})
     let updatedProj = await manageAppInfoLock(store.selectedEnvironment, appInfoId, loggedInUser, isLockAction).finally(() => { store.cancelLoadingSpinnerCtx() })
     if(updatedProj && updatedProj._id) {
-        store.displayQuickMessage(UIMessageType.WARN_MSG, `Project ${actionMsg} triggered by user: ${loggedInUser?.idsid}. Timestamp: ${(new Date()).toISOString()}`)
-        return updatedProj;   
+        store.displayQuickMessage(UIMessageType.WARN_MSG, `AppInfo ${actionMsg} triggered by user: ${loggedInUser?.idsid}. Timestamp: ${(new Date()).toISOString()}`)
+        return updatedProj;
     }
     else {
         return undefined;
@@ -486,46 +544,6 @@ export async function handleLockAction(appInfo: AppInfo, loggedInUser: LoggedInU
 
 
 
-// export function getHighestProjectPermRoleForLoggedInUser(project: Project, loggedInUser: LoggedInUser): BasicKVP {
-//     let defValue = { key: "Unknown", value: "Unknown"} as BasicKVP
-//     let projectId = project._id.toString() as string;
-
-//     if(loggedInUser && loggedInUser.perms) {
-//         let isInAWG = isUserInApproverWGForProject(loggedInUser, project);
-//         if(isInAWG) { 
-//             return { key: getApproverWGName(projectId), value: "Admin" } as BasicKVP; 
-//         }
-
-//         let permissionRoles : BasicProperty[] = project?.associatedProperties?.find(a => (
-//             a.category === ProjectPropertyCategoryEnum.PERMISSION_ROLES && a.name === ProjectPropertyCategoryEnum.PERMISSION_ROLES))?.value
-        
-//         if(permissionRoles && permissionRoles.length > 0) {
-//             let permData = permissionRoles.map(x => ({key: getEntitlementName(projectId, x.id), value: x.value} as BasicKVP))
-//             let relevantItems = permData.filter(a => loggedInUser.perms.has(a.key)) ?? [];
-//             if(relevantItems && relevantItems.length > 0) {
-//                 let sorted = sort(relevantItems).asc(a => a.value)
-//                 return sorted[0]
-//             }
-//         }
-//     }   
-
-//     return defValue
-// }
-
-
-
-// export function isUserApprovedForProjectRestrictorChangeAction(loggedInUser: LoggedInUser, project: Project) : boolean {
-//     if(loggedInUser) {
-//         if(project && project._id && project.owner) {
-//             if(project.owner.email.toLowerCase().trim() === loggedInUser.email.toLowerCase().trim()
-//             || project.owner.idsid.toLowerCase().trim() === loggedInUser.idsid.toLowerCase().trim()) {
-//                 return true;
-//             }
-//         }
-//     }
-
-//     return false;
-// }
 
 
 
@@ -535,6 +553,13 @@ export async function handleLockAction(appInfo: AppInfo, loggedInUser: LoggedInU
 
 
 
-//========================================================
+
+
+
+
+//============================================================================================================================================================
+
+//============================================================================================================================================================
+
 
 

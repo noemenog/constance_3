@@ -1,4 +1,4 @@
-import { useCallback, useContext, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Sidebar, Menu, MenuItem, MenuItemStyles, menuClasses} from "react-pro-sidebar";
 import { Box, Divider, Grid, IconButton, List, ListItem, Typography } from '@mui/material';
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
@@ -13,7 +13,7 @@ import { AspectRatio, BlurOn, CasesOutlined, GridGoldenratio, GridOnOutlined, He
 import { Person } from "@microsoft/mgt-react";
 import { RotatingLines, Triangle } from  'react-loader-spinner'
 import { ActionSceneEnum, SPECIAL_RED_COLOR } from "../DataModels/Constants";
-import { ProjectRelatedMenuItem } from "../DataModels/HelperModels";
+import { ProjectRelatedMenuItem } from "../DataModels/ServiceModels";
 import { useCStore } from "../DataModels/ZuStore";
 
 
@@ -57,10 +57,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
 
     const loggedInUser = useCStore((state) => state.loggedInUser);
     const showMenu = useCStore((state) => state.showMenu);
-    const currentAppInfo = useCStore((state) => state.currentAppInfo)
+    const currentAppInfo = useCStore((state) => state.currentAppBasicInfo)
     const isMenuCollapsed = useCStore((state) => state.isMenuCollapsed)
     const setIsMenuCollapsed = useCStore((state) => state.setIsMenuCollapsed)
-    const heightForSidebar = useCStore((state) => state.heightForSidebar)
     const menuCurrentScene = useCStore((state) => state.menuCurrentScene)
     const setMenuCurrentScene = useCStore((state) => state.setMenuCurrentScene)
     const loadingSpinnerCtx = useCStore((state) => state.loadingSpinnerCtx)
@@ -68,14 +67,27 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
 
     let isUserLoggedIn = (loggedInUser && loggedInUser.email.length > 0  && loggedInUser.idsid.length > 0  && loggedInUser.wwid.length > 0) ? true : false;
 
+    const [height, setHeight] = useState(window.innerHeight);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setHeight(window.innerHeight);
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        // Cleanup listener on component unmount
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
     const projMenuItems : Array<ProjectRelatedMenuItem> = useMemo(() => (
         [
-            {key: ActionSceneEnum.ROOT, label: "List All", icon: <HomeOutlinedIcon />, onProjSelectionOnly: false, disabled: false},
-            {key: ActionSceneEnum.APPINFO, label: "App Home", icon: <CasesOutlined />, onProjSelectionOnly: true, disabled: false},
-            {key: ActionSceneEnum.CONFIGS, label: "Configurations", icon: <SettingsApplicationsOutlined />, onProjSelectionOnly: true,  disabled: false},
-           
-            {key: ActionSceneEnum.LOGS, label: "Logs", icon: <WebStoriesOutlined />, onProjSelectionOnly: true, disabled: true},
-            {key: ActionSceneEnum.FAQS, label: "FAQ", icon: <HelpOutline />, onProjSelectionOnly: false, disabled: true}
+            {key: ActionSceneEnum.ROOT, label: "List All", icon: <HomeOutlinedIcon />, onProjSelectionOnly: false, disabled: false, envBased: false},
+            {key: ActionSceneEnum.APPHOME, label: "App Home", icon: <CasesOutlined />, onProjSelectionOnly: true, disabled: false, envBased: false},
+            {key: ActionSceneEnum.CONFIGURATIONS, label: "Configurations", icon: <SettingsApplicationsOutlined />, onProjSelectionOnly: true,  disabled: false, envBased: true},
+            {key: ActionSceneEnum.LOGS, label: "Logs", icon: <WebStoriesOutlined />, onProjSelectionOnly: true, disabled: true, envBased: true}
         ]
     ), []); 
 
@@ -114,7 +126,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
 
     
     const toolInfo = useMemo(() => (
-        <Box sx={{ backgroundColor: colors.greenAccent[800] }}>
+        <Box sx={{ backgroundColor: colors.blueAccent[400] }}>
             <ExtraInfoDiv style={{ color: "white" }}>
                 <StyledIntelLogoImg src={intelLogo} alt="intel-logo"></StyledIntelLogoImg>
                 <Typography sx={{mt: 1}} variant="caption">
@@ -163,30 +175,30 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
         else { return(<></>) }
     }
 
+
+
+    
     
 
     return (
-        <Box sx={{ flexDirection:'column', justifyContent:'space-between'}}>
+        <Box sx={{ flexDirection:'column', justifyContent:'space-between'}} >
 
             <Sidebar
+                className="appSidebar"
                 backgroundColor={colors.primary[400]} 
                 collapsed={isMenuCollapsed}
-                width="198px"
+                width="188px"
                 collapsedWidth="80px"
                 rootStyles={{ 
                     border: 0, 
                     minHeight: 600,
-                    height: typeof(heightForSidebar) === 'number' && (heightForSidebar as number) > 0 
-                        ? heightForSidebar
-                        : isMenuCollapsed
-                            ? "99vh"
-                            : "85.6vh"
+                    height: isMenuCollapsed ? `${height}px` : `${height-130}px`
                 }}>
 
                 <Menu menuItemStyles={menuItemStyles}>
                     
                     {/* Intel logo and Collapser */}
-                    <Box display="flex" justifyContent="space-between" alignItems="center" ml={isMenuCollapsed ? "18px" : "12px"}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" ml={isMenuCollapsed ? "18px" : "2px"}>
                         {!isMenuCollapsed && 
                             <LogoComp appName={appName} appVersion={appVersion} onLogoClick={onLogoClick} />
                         }
@@ -208,7 +220,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
                         </Box>
                     )}
 
-                    <Divider sx={{}} />
+                    <Divider sx={{mt: isMenuCollapsed ? 0.5 : 0}} />
                     
                     {/* Main menu items */}
                     <Box paddingLeft={isMenuCollapsed ? undefined : "0%"} >
@@ -220,7 +232,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ appName, appVersion, onLo
                                     component={
                                         <Link 
                                             to={menuItem.onProjSelectionOnly 
-                                                ? `/${menuItem.key}/${selectedEnvironment}/${currentAppInfo?._id ?? ''}${menuItem.subPath ? ('/' + menuItem.subPath) : ''}`
+                                                // ? `/${menuItem.key}/${selectedEnvironment}/${currentAppInfo?._id ?? ''}${menuItem.subPath ? ('/' + menuItem.subPath) : ''}`
+                                                ? `/${menuItem.key}/${currentAppInfo?.id ?? ''}/${menuItem.envBased ? (`${selectedEnvironment}/`) : ''}${menuItem.subPath ? ('/' + menuItem.subPath) : ''}`
                                                 : `${(menuItem.key === ActionSceneEnum.ROOT) ? "/list" : ("/" + menuItem.key)}`
                                             } 
                                             onClick={() => {setMenuCurrentScene(menuItem.key)}}

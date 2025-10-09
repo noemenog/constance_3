@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Alert, Box, Divider, IconButton, SxProps, Table, TableBody, TableCell, TableRow, TextField, Theme, Tooltip, Typography } from '@mui/material';
 import { AddCircle, Cancel } from '@mui/icons-material';
-import { BasicKVP, DisplayOption } from '../DataModels/HelperModels';
+import { BasicKVP, DisplayOption } from '../DataModels/ServiceModels';
 import { useTheme } from "@mui/material/styles";
 import { themeDarkBlue, tokens } from '../theme';
 import { AgGridReact } from 'ag-grid-react';

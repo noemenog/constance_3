@@ -53,19 +53,19 @@ export interface ConfigItem extends ServiceModel {
 }
 
 
-export interface ConfigHistory extends ServiceModel {
+export interface ConfigChangeHistory extends ServiceModel {
     configItemId: string;
+    bucketId: string;
     changes: ConfigChangeInstance[];
 }
 
 
-export interface ConfigChangeInstance extends ServiceModel {
+export interface ConfigChangeInstance {
     index: number;
-    description: string;
     contentType: ConfigContentTypeEnum;
     value: any; 
     timeStamp: Date;
-    user: User;
+    user: string;
     tags: string[];
 }
 

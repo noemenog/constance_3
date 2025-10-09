@@ -7,7 +7,7 @@ import DarkModeOutlined from "@mui/icons-material/DarkModeOutlined";
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import React from "react";
-import { SnackBarData, LoggedInUser, LoadingSpinnerInfo } from "../DataModels/HelperModels";
+import { SnackBarData, LoggedInUser, LoadingSpinnerInfo } from "../DataModels/ServiceModels";
 import { Login } from '@microsoft/mgt-react';
 import { Providers, ProviderState } from "@microsoft/mgt-element";
 import { AGS_APP_ACCESS_ENTITLEMENT, AGS_APP_NAME, ActionSceneEnum, CONFIGITEM__Init_Display_Message, UIMessageType } from "../DataModels/Constants";
@@ -49,7 +49,7 @@ const TopBar: React.FC<TopBarProps> = ({ appName, appVersion, onLoginSuccessful,
 
     const msalContext : IMsalContext = useMsal();
 
-    const{ projectId } = useParams()
+    const{ appId } = useParams()
 
     //zustand impl
     const setLoggedInUser = useCStore((state) => state.setLoggedInUser);
@@ -85,7 +85,7 @@ const TopBar: React.FC<TopBarProps> = ({ appName, appVersion, onLoginSuccessful,
                 if(user.perms && user.perms.size > 0 && user.perms.has(AGS_APP_ACCESS_ENTITLEMENT)) {   
                     //This handles scenario where user paste a specific URL to drop to certain page of a project
                     setLoadingSpinnerCtx({enabled: true, text: "Retrieving permissions from AGS system. Please wait...."} as LoadingSpinnerInfo)
-                    loadAWGStatusForLoggedInUser(user as LoggedInUser, projectId || '').then((awgCheckUser: LoggedInUser) => {
+                    loadAWGStatusForLoggedInUser(user as LoggedInUser, appId || '').then((awgCheckUser: LoggedInUser) => {
                         user = awgCheckUser;
                     }).finally(() => { 
                         // setLoggedInUser(user); //Important!
@@ -105,7 +105,7 @@ const TopBar: React.FC<TopBarProps> = ({ appName, appVersion, onLoginSuccessful,
                     
                     setTimeout(() => {
                         const store = useCStore.getState();  //need to use this strategy here!
-                        let initMsg = store.initConfigs?.find(a => a.configName === CONFIGITEM__Init_Display_Message)?.configValue
+                        let initMsg = store.initConfigs?.find(a => a.name === CONFIGITEM__Init_Display_Message)?.value
                         if(initMsg && initMsg.messageType && initMsg.message && initMsg.message.length > 0) {
                             let time = ((initMsg.msTime && initMsg.msTime !== 0) ? initMsg.msTime : 6000)
                             if (initMsg.messageType === UIMessageType.INFO_MSG) { displaySnackBarMessage(UIMessageType.INFO_MSG, initMsg.message, time); }
@@ -208,7 +208,7 @@ const TopBar: React.FC<TopBarProps> = ({ appName, appVersion, onLoginSuccessful,
                     <IconButton disabled onClick={colorMode.toggleColorMode}>
                         {theme.palette.mode === 'dark' ? (<DarkModeOutlined />) : (<LightModeOutlinedIcon />)}
                     </IconButton>
-                    <IconButton disabled onClick={() => navigate(`/${ActionSceneEnum.FAQS}/`)}>
+                    <IconButton disabled onClick={() => { /* do nothing for now */}}>
                         <HelpOutlineOutlinedIcon />
                     </IconButton>
                     <IconButton>

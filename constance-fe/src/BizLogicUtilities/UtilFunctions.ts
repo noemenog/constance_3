@@ -1,16 +1,99 @@
 import axios from "axios";
 import 'react-confirm-alert/src/react-confirm-alert.css';
 import { Location } from "react-router-dom";
-import { ServiceModel } from "../DataModels/ServiceModels";
-import { BasicKVP, BasicProperty, ConfigItem, ConstraintValues, PropertyItem, QuickStatus } from "../DataModels/HelperModels";
+import { AppInfo, BasicProperty, Bucket, ServiceModel } from "../DataModels/ServiceModels";
 import { GridApi } from "ag-grid-community";
 import rfdc from "rfdc";
-import { GridCellKind, GridColumn } from "@glideapps/glide-data-grid";
 import { DisplayError } from "../CommonComponents/ErrorDisplay";
 import { sort } from "fast-sort";
-import { NamingContentTypeEnum } from "../DataModels/Constants";
+import { ConfigContentTypeEnum, ENVIRONMENTLIST, EnvTypeEnum, NamingContentTypeEnum, PermRolesEnum } from "../DataModels/Constants";
 
 
+
+
+//================================================
+//#region conf mgmt utils
+
+export function getEnviList(element: AppInfo|Bucket) : {envListProp: BasicProperty|undefined, envListShortSingleString: string, envListShortFormatArray: string[], envListRawFormatArray: string[]} {
+    let shortNameMap = new Map<string, string>([
+        [EnvTypeEnum.DEVELOPMENT.toUpperCase(), "DEV"], [EnvTypeEnum.PREVIEW.toUpperCase(), "PRE"], [EnvTypeEnum.PRODUCTION.toUpperCase(), "PROD"]
+    ]);
+    let envListBP : BasicProperty|undefined = element.contextProperties.find(a => a.name.toUpperCase() === ENVIRONMENTLIST);
+    let envShortFormatValue = (envListBP && envListBP.value) ? envListBP.value.map((x: string) => shortNameMap.get(x.trim().toUpperCase())) : [] 
+    let envShortSingleValue = envShortFormatValue?.join(" , ") ?? '';
+    
+    return { envListProp: envListBP, envListShortSingleString: envShortSingleValue, envListShortFormatArray: envShortFormatValue, envListRawFormatArray: (envListBP?.value ?? []) };
+}
+
+
+export function getRoleForEnv(env: string|EnvTypeEnum): PermRolesEnum|null {
+    if ((env?.toString()?.toLowerCase() === "production") || (env?.toString()?.toLowerCase() === "prod")) {
+        return PermRolesEnum.PROD_ENV_ACCESS;
+    }
+    else if ((env?.toString()?.toLowerCase() === "preview") || (env?.toString()?.toLowerCase() === "pre")) {
+        return PermRolesEnum.PRE_ENV_ACCESS;
+    }
+    else if ((env?.toString()?.toLowerCase() === "development") || (env?.toString()?.toLowerCase() === "dev")) {
+        return PermRolesEnum.DEV_ENV_ACCESS;
+    }
+    else {
+        console.error("ERROR!!!  No Role found for provided environment str!!!!")
+        return null
+    }
+}
+    
+    
+export function validateConfigValueAndType(value: any, valueType: ConfigContentTypeEnum, isWellKnownToBeStr : boolean = false): boolean {
+    if (ConfigContentTypeEnum.JSON === valueType.toUpperCase()) {
+        try {
+            if(typeof value == "string" && isWellKnownToBeStr) {
+                return (value && value.length > 0 && JSON.parse(value)) ? true : false
+            }
+            else if(typeof value == "object") {
+                return (value && JSON.parse(JSON.stringify(value))) ? true : false
+            }
+            else {
+                throw new Error();
+            }
+        } 
+        catch (e) {
+            return false;
+        }
+    }
+    else if (ConfigContentTypeEnum.BOOLEAN === valueType.toUpperCase()) {
+        if (value.toString().toLowerCase() === "true" || value.toString().toLowerCase() === "false") {
+            return true;
+        } 
+        else {
+            return false;
+        }
+    }
+    else if (ConfigContentTypeEnum.NUMBER === valueType.toUpperCase()) {
+        return /^-?\d+$/.test(value);
+    }
+    else if (ConfigContentTypeEnum.STRING === valueType.toUpperCase()) {
+        if ((typeof value === "string") && (value.length > 0)){
+            return true;
+        } 
+        else {
+            return false;
+        }
+    } 
+    else if (ConfigContentTypeEnum.XML === valueType.toUpperCase()) {
+        //Need to do
+        //https://github.com/libxmljs/libxmljs
+        try {
+            //  libxml.parseXml(value);
+        } catch (e) {
+            return false;
+        }
+        return true;
+    } 
+    else {
+        return false;
+    }
+}
+//#endregion
 
 
 
@@ -28,19 +111,6 @@ export function isResolutionWorseThan1080p(): boolean {
     const minHeight: number = 1080 - 1;
     let res = (screenWidth < minWidth) || (screenHeight < minHeight);
     return res
-}
-
-
-export function isConstraintValuesObject(obj: any): obj is ConstraintValues {
-    return (
-        typeof obj === 'object'
-        && obj !== null
-        && obj.id !== null
-        && obj.id !== undefined
-        && typeof obj.configValue === 'string'
-        && typeof obj.defautlValue === 'string'
-        && typeof obj.customValue === 'string'
-    );
 }
 
 
@@ -82,45 +152,6 @@ export function removeSubstringFromBeginning(str: string, removalSubstring: stri
     }
     
     return newStr;
-}
-
-
-export function newValueMatchesColumnDataType(value: any, valueKind: GridCellKind, columnElement: GridColumn) {
-    if(value === '') { return true; } //probably the value was deleted or set back to empty by user. Carry on....
-    if(valueKind && columnElement.icon) {
-        if (valueKind === GridCellKind.Boolean) {
-            if ((value !== null && value !== undefined) && (value.toString().toLowerCase() === "true" || value.toString().toLowerCase() === "false")) {
-                return true;
-            } 
-            else {
-                return false;
-            }
-        }
-        else if (valueKind === GridCellKind.Number) {
-            let res = isNumber(value);
-            return res;
-        }
-        else if (valueKind === GridCellKind.Text)  {
-            if (value && (typeof value === "string") && (value.length > 0)){
-                return true;
-            } 
-            else {
-                return false;
-            }
-        } 
-        else if (valueKind === GridCellKind.Custom)  {
-            if (value && (typeof value === "string") && (value.length > 0)){
-                return true;
-            } 
-            else {
-                return false;
-            }
-        } 
-        else {
-            return true;  //for now, we make an assumption.... 
-            //TODO: more validation might come later
-        }
-    }
 }
 
 
@@ -431,8 +462,6 @@ export const getEnvContext = () => {
     return backend;
 }
 //#endregion
-
-
 
 
 

@@ -1,5 +1,5 @@
 import { DatabaseConnectionTypeEnum, DBCollectionTypeEnum } from "./Models/Constants";
-import { AppInfo, Bucket, ConfigItem } from "./Models/ServiceModels";
+import { AppInfo, Bucket, ConfigChangeHistory, ConfigItem } from "./Models/ServiceModels";
 import { getEnumValuesAsArray } from "./BizLogic/UtilFunctions";
 import { ClientSession, Collection, Db, MongoClient, MongoClientOptions } from "mongodb";
 
@@ -106,6 +106,9 @@ export function getCollection(env: string, collType: DBCollectionTypeEnum) {
     else if ((env?.trim()?.toLowerCase() === "development") || (env?.trim()?.toLowerCase() === "dev")) {
         return getCollectionImpl(collType.toString(), DatabaseConnectionTypeEnum.DEV_DB)
     }
+    else {
+        throw new Error(`Invalid environment specified. The value '${env}' is not acceptable.`)
+    }
 }
 
 
@@ -131,7 +134,7 @@ export async function createMongoIndexes() {
                     let collection = db.collection<Bucket>(DBCollectionTypeEnum.BUCKET_COLLECTION);
                     collection.createIndex({ownerElementId: 1})
                     collection.createIndex({_id: 1, ownerElementId: 1, name: 1 })
-                } 
+                }
                 else if(collectionName === DBCollectionTypeEnum.CONFIGITEM_COLLECTION){
                     let collection = db.collection<ConfigItem>(DBCollectionTypeEnum.CONFIGITEM_COLLECTION);
                     collection.createIndex({ownerElementId: 1})
@@ -139,6 +142,12 @@ export async function createMongoIndexes() {
                     collection.createIndex({_id: 1, ownerElementId: 1, bucketId: 1})
                     collection.createIndex({_id: 1, ownerElementId: 1, bucketId: 1, name: 1})
                 }
+                else if(collectionName === DBCollectionTypeEnum.CHANGE_CHANGE_HISTORY_COLLECTION){
+                    let collection = db.collection<ConfigChangeHistory>(DBCollectionTypeEnum.CHANGE_CHANGE_HISTORY_COLLECTION);
+                    collection.createIndex({ownerElementId: 1})
+                    collection.createIndex({ownerElementId: 1, configItemId: 1 })
+                    collection.createIndex({_id: 1, ownerElementId: 1, configItemId: 1 })
+                } 
                 else {
                     // hapilly do nothing :-)
                 }

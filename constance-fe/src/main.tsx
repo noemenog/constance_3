@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { Providers } from '@microsoft/mgt-element';
 import { Msal2Provider } from '@microsoft/mgt-msal2-provider';
@@ -11,25 +11,23 @@ import './index.css';
 // import 'ag-grid-community/styles/ag-grid.css';
 // import 'ag-grid-community/styles/ag-theme-alpine.min.css';
 // import 'ag-grid-community/styles/ag-theme-quartz.min.css';
-import "@glideapps/glide-data-grid/dist/index.css";
-import "@glideapps/glide-data-grid-cells/dist/index.css";
+// import "@glideapps/glide-data-grid/dist/index.css";
+// import "@glideapps/glide-data-grid-cells/dist/index.css";
 import 'react-confirm-alert/src/react-confirm-alert.css';
 import '@mantine/core/styles.css';
 import '@mantine/dropzone/styles.css';
 
 
-import { LoaderFunctionArgs, Params, redirect } from 'react-router';
+import { LoaderFunctionArgs, Params, redirect, useNavigate } from 'react-router';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import Error404Page from './CommonComponents/ErrorDisplay';
 import { ActionSceneEnum } from './DataModels/Constants';
 import AppInfoContainer from './Scenes/AppInfo/AppInfoContainer';
 import AppInfoList from './Scenes/AppInfo/AppInfoList';
-import FAQPage from './Scenes/Support/FAQPage';
 import LogView from './Scenes/Support/LogView';
-import { baseRouteLoader, appInfoListLoader, appInfoDetailsLoader as appInfoDetailsLoader,
-    logsLoader, faqLoader, comparisonLoader, bucketConfigLoader } from './BizLogicUtilities/RouterLoaderFuncs';
-import BucketDetails222 from './Scenes/Bucket/BucketDetails222';
+import { baseRouteLoader, appInfoListLoader, appInfoDetailsLoader as appInfoDetailsLoader, logsLoader, comparisonLoader, bucketConfigLoader } from './BizLogicUtilities/RouterLoaderFuncs';
+import BucketConfigContainer from './Scenes/BucketConfig/BucketConfigContainer';
 
 
 
@@ -51,6 +49,17 @@ Providers.globalProvider = new Msal2Provider({
 })
 
 
+
+function Redirector(props: any) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate(`${props.path}`);
+  }, [navigate]);
+
+  return null; // Optionally, you can return a loading spinner or message
+}
+
 //Define react routes
 const router = createBrowserRouter([
     {
@@ -64,46 +73,44 @@ const router = createBrowserRouter([
                 element: <AppInfoList />,
                 loader: ({ request, params }: LoaderFunctionArgs) => appInfoListLoader(request, params),
             },
+            //NON Env ================================================================================
             {
-                path: `${ActionSceneEnum.APPINFO}/:env/:appId/:tabInfo`,
+                path: `${ActionSceneEnum.APPHOME}/:appId/:tabInfo`,
                 element: <AppInfoContainer />,
                 loader: ({ request, params }: LoaderFunctionArgs) => appInfoDetailsLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.APPINFO}/:env/:appId`,
+                path: `${ActionSceneEnum.APPHOME}/:appId`,
                 element: <AppInfoContainer />,
                 loader: ({ request, params }: LoaderFunctionArgs) => appInfoDetailsLoader(request, params),
             },
+            //ENV RELATED =============================================================================
             {
-                path: `${ActionSceneEnum.CONFIGS}/:env/:appId/:bucketId/:configId/:version`,
-                element: <BucketDetails222 />,
+                path: `${ActionSceneEnum.CONFIGURATIONS}/:appId/:env/:bucketId/:configId/:version`,
+                element: <BucketConfigContainer />,
                 loader: ({ request, params }: LoaderFunctionArgs) => bucketConfigLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.CONFIGS}/:env/:appId/:bucketId`,
-                element: <BucketDetails222 />,
+                path: `${ActionSceneEnum.CONFIGURATIONS}/:appId/:env/:bucketId`,
+                element: <BucketConfigContainer />,
                 loader: ({ request, params }: LoaderFunctionArgs) => bucketConfigLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.CONFIGS}/:env/:appId`,
-                element: <BucketDetails222 />,
+                path: `${ActionSceneEnum.CONFIGURATIONS}/:appId/:env`,
+                element: <BucketConfigContainer />,
                 loader: ({ request, params }: LoaderFunctionArgs) => bucketConfigLoader(request, params),
             },
             {
-                path: `${ActionSceneEnum.COMPARE}/:env/:appId/:bucketId/:destEnv`,
-                element: <BucketDetails222 />,
+                path: `${ActionSceneEnum.COMPARE}/:appId/:env/:bucketId/:destEnv`,
+                element: <BucketConfigContainer />,
                 loader: ({ request, params }: LoaderFunctionArgs) => comparisonLoader(request, params),
             },
+            //OTHERS====================================================================================
             {
-                path: `${ActionSceneEnum.LOGS}/:env/:appId`,
+                path: `${ActionSceneEnum.LOGS}/:appId/:env`,
                 element: <LogView />,
                 loader: ({ request, params }: LoaderFunctionArgs) => logsLoader(request, params),
-            },
-            {
-                path: "faq",
-                element: <FAQPage />,
-                loader: ({ request, params }: LoaderFunctionArgs) => faqLoader(request, params),
-            },
+            }
         ],
     },
 ]);

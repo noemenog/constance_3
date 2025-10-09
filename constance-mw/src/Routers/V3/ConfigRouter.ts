@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import * as mongo from "mongodb";
-import { performConfigAdd, performConfigRetrieval, performConfigUpdate } from "../../BizLogic/midwareUtils";
+import { performConfigAdd, performConfigRetrieval, performConfigUpdate } from "../../Deprecated/midwareUtils";
 import crypto from "crypto"
 import { ErrorSeverityValue } from "../../Models/Constants";
 import { ResponseData } from "../../Models/HelperModels";
@@ -40,7 +40,33 @@ configRouter.get("/:env/configs/get", async (req: Request, res: Response) => {
 });
 
 
+configRouter.post("/:env/configs/add", async (req: Request, res: Response) => {
+    try {
+        const configs: ConfigItem[] = req.body as ConfigItem[];
+        
+        if (configs && configs.length > 0) {
+            let addedConfs = await performConfigAdd(req.params.env, configs, false);
+            res.status(200).send({ payload: addedConfs } as ResponseData);
+        }
+        else {
+            throw new Error(`Could not add new configs because no valid set of configs were provided for the operation`);
+        }
+    }
+    catch (e: any) {
+        let resp = {
+            payload: undefined,
+            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
+        }
+        console.error(resp);
+        res.status(500).json(resp);
+    }
+});
+
+
 configRouter.post("/:env/configs/update", async (req: Request, res: Response) => {
+    //WARNING:
+    //WARNING: //WE need to update ONLY the items that have experienced change!!!!
+    //WARNING:
     try {
         const configs: ConfigItem[] = req.body as ConfigItem[];
 
@@ -125,29 +151,6 @@ configRouter.post("/:env/configs/update", async (req: Request, res: Response) =>
 });
 //========================================================================================================
 //========================================================================================================
-
-
-configRouter.post("/:env/configs/add", async (req: Request, res: Response) => {
-    try {
-        const configs: ConfigItem[] = req.body as ConfigItem[];
-        
-        if (configs && configs.length > 0) {
-            let addedConfs = await performConfigAdd(req.params.env, configs, false);
-            res.status(200).send({ payload: addedConfs } as ResponseData);
-        }
-        else {
-            throw new Error(`Could not add new configs because no valid set of configs were provided for the operation`);
-        }
-    }
-    catch (e: any) {
-        let resp = {
-            payload: undefined,
-            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
-        }
-        console.error(resp);
-        res.status(500).json(resp);
-    }
-});
 
 
 configRouter.delete("/:env/configs/delete", async (req: Request, res: Response) => {
