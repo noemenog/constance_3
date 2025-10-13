@@ -53,11 +53,20 @@ export enum ActionSceneEnum {
 
 
 export enum ConfigContentTypeEnum {
-    JSON = "JSON",
-    XML = "XML",
     STRING = "STRING",
     NUMBER = "NUMBER",
     BOOLEAN = "BOOLEAN",
+    PYTHON = "PYTHON",
+    JSON = "JSON",
+    XML = "XML",
+    YAML = "YAML",
+    POWERSHELL = "POWERSHELL",
+    BASH_SHELL = "BASH_SHELL",
+    HTML = "HTML", 
+    CSS = "CSS", 
+    DOCKERFILE = "DOCKERFILE",
+    VBSCRIPT = "VBSCRIPT",
+    SQL = "SQL"
 }
 
 
@@ -117,7 +126,7 @@ export const ENVIRONMENTLIST = "ENVIRONMENTLIST";
 
 export const CHANGE_INDICATOR = "CHANGE_INDICATOR";
 
-export const MONGO_ID_CHECK_REGEX_PATTERN : RegExp = /^[0-9a-fA-F]{24}$/;
+// export const MONGO_ID_CHECK_REGEX_PATTERN : RegExp = /^[0-9a-fA-F]{24}$/;
 
 
 

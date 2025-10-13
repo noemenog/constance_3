@@ -4,13 +4,14 @@ import { CellDoubleClickedEvent, ColDef, ColGroupDef, GetContextMenuItemsParams,
 import { Box, Divider, IconButton, InputBase, Slide, Table, TableBody, TableCell, TableRow, Tooltip, Typography, useTheme } from '@mui/material';
 import { themeDarkBlue, tokens } from '../../theme';
 import { AppInfo, Bucket, CDomainData, ConfigItem, LoadingSpinnerInfo, LoggedInUser } from '../../DataModels/ServiceModels';
-import { ConfigContentTypeEnum, GRID_SUPRESS_KEYS, LATEST_VERSION_TAG, SPECIAL_BLUE_COLOR, SPECIAL_RED_COLOR, UIMessageType } from '../../DataModels/Constants';
-import { getEnumValuesAsMap, getEnviList, validateConfigValueAndType } from '../../BizLogicUtilities/UtilFunctions';
+import { ConfigContentTypeEnum, GRID_SUPRESS_KEYS, LATEST_VERSION_TAG, SPECIAL_BLUE_COLOR, SPECIAL_DARKMODE_TEXTFIELD_COLOR, SPECIAL_QUARTZ_COLOR, SPECIAL_RED_COLOR, UIMessageType } from '../../DataModels/Constants';
+import { getEnumValuesAsArray, getEnumValuesAsMap, getEnviList, validateConfigValueAndType } from '../../BizLogicUtilities/UtilFunctions';
 import { useCStore } from '../../DataModels/ZuStore';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import { Editor, Monaco } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
 import EditorComp from '../../CommonComponents/EditorComp';
+import { KeyboardDoubleArrowLeftOutlined, KeyboardDoubleArrowRightOutlined, UnfoldMoreDoubleOutlined } from '@mui/icons-material';
 
 enum TVActionTypeEnum {
     COPY = "copy",
@@ -62,12 +63,14 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
     const [bucketList, setBucketList] = useState<Bucket[]>(buckets);
     const [configList, setConfigList] = useState<ConfigItem[]>(currentConfigs);
     const [hasPendingChanges, setHasPendingChanges] = useState<boolean>(true);
+    const [showSideEditor, setShowSideEditor] = useState<boolean>(true);
 
     const [gridApi, setGridApi] = useState<GridApi>();
     const [quickFilterText, setQuickFilterText] = useState('')
 
     const containerRef = useRef<any>();
     const valueEditorRef = useRef<null|editor.IStandaloneCodeEditor>(null);
+
 
 
     useImperativeHandle(ref, () => ({
@@ -128,16 +131,47 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
             sortable: true,
             editable: true,
             sortingOrder: ["asc", "desc"],
+            cellStyle: (params: any) => { return { fontWeight : 'normal', textAlign: 'left' } },
+            cellEditor: 'agRichSelectCellEditor',
             onCellValueChanged: (event) => onEditableCellValueChanged(event, "contentType"),
-            cellEditor: 'agPopupSelectCellEditor',
             cellEditorParams: {
-                values: Array.from(getEnumValuesAsMap(ConfigContentTypeEnum).keys()),
+                values: (params: any) => {
+                    let opts = Array.from(getEnumValuesAsArray(ConfigContentTypeEnum)).sort()
+                    return opts
+                },
             },
-            cellStyle: (params: any) => { return { fontWeight : 'normal', textAlign: 'left' } }
+            // valueGetter: params => {
+            //     if(params && params.data) {
+            //         if(params.data.currentVersionId && params.data.currentVersionId.length > 0) {
+            //             if(params.data.versions && params.data.versions.length > 0) {
+            //                 let verItem = (params.data.versions as VersionContext[]).find(x => x.id === params.data.currentVersionId)
+            //                 if(verItem) {
+            //                     return verItem.versionNumber;
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     return ""
+            // },
+            // valueSetter: (params: any) => { 
+            //     if(params && params.newValue && params.newValue > 0) {
+            //         if(params.data.versions && params.data.versions.length > 0) {
+            //             let verItem = (params.data.versions as VersionContext[]).find(x => x.versionNumber === params.newValue)
+            //             if(verItem) {
+            //                 params.data.currentVersionId = verItem.id
+            //                 return true;
+            //             }
+            //         }
+            //         return false;
+            //     }
+            //     else {
+            //         return false;
+            //     }
+            // },
         },
         {
             //version will be formatted as: "### - date [idsid]"
-            //if latest version: "Latest - date [idsid]"   >> in this case, date is lastUpdatedOn field of the main ConfigItem
+            //if latest version: "Latest - date [idsid]" >> in this case, date is lastUpdatedOn field of the main ConfigItem
             headerName: "Version",
             field: 'version',
             resizable: true,
@@ -153,6 +187,22 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
                 values: [LATEST_VERSION_TAG],
             },
             cellStyle: (params: any) => { return { fontWeight : 'normal', textAlign: 'left' } }
+        },
+        {
+            headerName: "Value",
+            field: "value",
+            resizable: true,
+            filter: 'text',
+            cellEditor: 'agLargeTextCellEditor',
+            cellEditorPopup: true,
+            minWidth: 200,
+            autoHeight: true,
+            sortable: true,
+            editable: true,
+            hide: showSideEditor ? true : false,
+            sortingOrder: ["asc", "desc"],
+            onCellValueChanged: (event) => onEditableCellValueChanged(event, "description"),
+            cellStyle: (params: any) => { return { fontWeight: 'normal', textAlign: 'left' } },
         },
         {
             headerName: "Description",
@@ -393,16 +443,16 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
     
 
 
-
+   
 
 
 
     return (
         <Box>
             <Box ref={containerRef} flexDirection="column" alignItems="left" justifyContent="left">
-                <Box sx={{display:"flex", flexDirection:"row", justifyContentsx: "center", width:"100%", m: 1, mt: 1}}>
+                <Box sx={{display:"flex", flexDirection:"row", justifyContent: "space-between", width:"100%", m: 1, mt: 1}}>
                     
-                    <div style={{ marginTop: 5, height: "76.5vh", width: '65%' }} >
+                    <div style={{ marginTop: 5, height: "76.5vh", width: (showSideEditor ? '65%' : '100%') }} >
                         <AgGridReact
                             rowData={configList}
                             animateRows={true}
@@ -430,15 +480,27 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
                         />
                     </div>
                     
-                    <Slide timeout={{ enter: 600, exit: 400 }} direction="up" in={true} container={containerRef.current}>
-                        <Box sx={{ display: 'flex', alignItems: 'center'}} flexDirection={"row"}>
-                            <Divider sx={{width: 10, mt: 2, mb: 2}} />
-                            <Divider orientation="vertical" sx={{ml: 2, mr: 2, height:"60vh"}} />
-                            <Divider sx={{width: 10, mt: 2, mb: 2}} />
-                        </Box>
-                    </Slide>
+                    <Box sx={{display:"flex", flexDirection:"column", justifyContent: "space-between", m: 1, mt: 1}}>
+                        <Slide timeout={{ enter: 600, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+                            <Tooltip placement="top" title={`Expand All`}>
+                                <IconButton onClick={() => setShowSideEditor(!showSideEditor)} sx={{backgroundColor: SPECIAL_DARKMODE_TEXTFIELD_COLOR}}>
+                                    {(showSideEditor)
+                                        ? <KeyboardDoubleArrowRightOutlined fontSize="large" sx={{ color: SPECIAL_RED_COLOR}} />
+                                        : <KeyboardDoubleArrowLeftOutlined fontSize="large" color="secondary"/>
+                                    }
+                                </IconButton>
+                            </Tooltip>
+                        </Slide>
+                        <Slide timeout={{ enter: 600, exit: 400 }} direction="left" in={true} container={containerRef.current}>
+                            <Box sx={{ display: 'flex', alignItems: 'center'}} flexDirection={"row"}>
+                                <Divider sx={{width: 10, mt: 2, mb: 2, backgroundColor: colors.grey[400]}} />
+                                <Divider orientation="vertical" sx={{ml: 2, mr: 2, height:"60vh", backgroundColor: colors.grey[400]}} />
+                                <Divider sx={{width: 10, mt: 2, mb: 2, backgroundColor: colors.grey[400]}} />
+                            </Box>
+                        </Slide>
+                    </Box>
 
-                    <Box sx={{ display:"flex", flexDirection:"column", alignItems:"center", mt: .5, width: '35%', mr: 2 }} >
+                    { showSideEditor && <Box sx={{ display:"flex", flexDirection:"column", alignItems:"center", mt: .5, width: '35%', mr: 2 }} >
                         <Box sx={{  border: 1, borderColor: hasPendingChanges ? SPECIAL_RED_COLOR : colors.grey[400], 
                             display:"flex", flexDirection:"column", alignItems:"center", width: '100%' }} >
                             <EditorComp 
@@ -450,7 +512,7 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
                                 ref={valueEditorRef.current}
                             />
                         </Box>
-                    </Box>         
+                    </Box>}         
                     
                 </Box>
             </Box>

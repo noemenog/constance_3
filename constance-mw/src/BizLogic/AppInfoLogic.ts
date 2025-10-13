@@ -79,7 +79,6 @@ export async function performAppAdd(app: AppInfo) : Promise<AppInfo|null>{
 
 
 
-
 export async function performAppUpdate(app: AppInfo) : Promise<AppInfo|null>{
     let allValidEnvironments = getEnumValuesAsArray(EnvTypeEnum);
     let devAppRepo = new ServiceModelRepository<AppInfo>(DBCollectionTypeEnum.APPINFO_COLLECTION, EnvTypeEnum.DEVELOPMENT)
@@ -240,6 +239,7 @@ export async function performAppDelete(currEnv: string, appId: string, delEnv: s
 }
 
 
+
 export async function includeContextDetailsForApp(app: AppInfo, env: EnvTypeEnum, includeBuckets: boolean, includeEnvironmentList: boolean): Promise<AppInfo> {
     if(app) {
         if(includeBuckets === true) {
@@ -265,6 +265,7 @@ export async function includeContextDetailsForApp(app: AppInfo, env: EnvTypeEnum
     }
     return app;
 }
+
 
 
 async function getAllEnvironmentsForApp(appId: string) : Promise<Array<EnvTypeEnum>>{

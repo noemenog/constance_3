@@ -81,7 +81,7 @@ export const useCStore = create<CStore>()(
         setIsLoadingBackdropEnabled : (isLoadingBackdropEnabled) => set((state) => { state.isLoadingBackdropEnabled = isLoadingBackdropEnabled; }),
         setThemeMode : (themeMode) => set((state) => { state.themeMode = themeMode; }),
         setLoadingSpinnerCtx: (loadingSpinnerCtx) => set((state) => { state.loadingSpinnerCtx = {...loadingSpinnerCtx}; }),
-        setMenuCurrentScene: (menuCurrentScene) => set((state) => { state.menuCurrentScene = menuCurrentScene; console.log("Menu scene changed to: " + menuCurrentScene); }),
+        setMenuCurrentScene: (menuCurrentScene) => set((state) => { state.menuCurrentScene = menuCurrentScene; }),
         setMainTitle: (mainTitle) => set((state) => { state.mainTitle = mainTitle; }),
         setMainSubtitle: (mainSubtitle) => set((state) => { state.mainSubtitle = mainSubtitle; }),
         setShowMenu: (showMenu) => set((state) => { state.showMenu = showMenu; }),
@@ -126,8 +126,8 @@ export const useCStore = create<CStore>()(
             }
             else {
                 state.menuCurrentScene = ActionSceneEnum.ROOT
-                state.mainTitle = "App List"
-                state.mainSubtitle = "Please select an app"
+                state.mainTitle = "Constance"
+                state.mainSubtitle = "Configuration Management Simplified"
             }
         }),
 

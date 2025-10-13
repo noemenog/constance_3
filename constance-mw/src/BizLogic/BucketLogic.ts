@@ -90,7 +90,6 @@ export async function performBucketAdd(bucketList: Bucket[]) : Promise<Bucket[]|
 
 
 
-
 export async function performBucketUpdate(bucket: Bucket) : Promise<Bucket|null>{
     let allValidEnvironments = getEnumValuesAsArray(EnvTypeEnum);
     let devBuckRepo = new ServiceModelRepository<Bucket>(DBCollectionTypeEnum.BUCKET_COLLECTION, EnvTypeEnum.DEVELOPMENT)
@@ -208,7 +207,6 @@ export async function performBucketDelete(currEnv: string, bucketId: string, del
 
 
 
-
 export async function exportBucket(srcEnv: EnvTypeEnum|string, bucket: Bucket, destEnv: EnvTypeEnum|string, user: User) {
     if (srcEnv.toString().toLowerCase().trim() === destEnv.toString().toLowerCase().trim()) {
         throw new Error(`Source and destination environments cannot be the same. Configs cannot be exported.`);
@@ -286,7 +284,6 @@ export async function exportBucket(srcEnv: EnvTypeEnum|string, bucket: Bucket, d
         }
     }
 }
-
 
 
 

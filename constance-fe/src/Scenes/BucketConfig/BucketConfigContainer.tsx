@@ -78,6 +78,9 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
     const editorViewComponentRef = useRef<EditorViewComponentRef>(null);
 
 
+    const NEW_CONF_ID_PREFIX = "PENDING::"
+
+
 
     useEffect(() => {
         placePageTitle("configurations");
@@ -146,9 +149,9 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
 
 
 
-    const handleSelectionChange = (count: number) => {
-        // setSelectedCount(count);
-    };
+    // const handleSelectionChange = (count: number) => {
+    //     // setSelectedCount(count);
+    // };
 
 
 
@@ -159,32 +162,45 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
         if(selectedEnvironment && selectedEnvironment.length > 0 && appInfo && appInfo._id && appInfo._id.toString().length > 0) {
             if(selectedBucket && selectedBucket._id && selectedBucket._id.toString().length > 0 && configList && configList.length > 0) {
                 if(jsonConfigViewEnabled === true) {
-                    selectedConfigs = getEditorViewModifiedConfigList(true);
+                    selectedConfigs = getEditorViewConfigList(true);
                 }
                 else {
                     selectedConfigs = getTableViewSelectedRows(true, true);
                 }
 
                 if(selectedConfigs && selectedConfigs.length > 0) {
-                    setLoadingSpinnerCtx({enabled: true, text: "Now updating configs. Please wait..."} as LoadingSpinnerInfo)
-                    updateConfigs(selectedEnvironment as EnvTypeEnum, selectedConfigs).then((updatedConfigs) => {
+                    let newAdders = selectedConfigs.filter(x => x._id.toString().startsWith(NEW_CONF_ID_PREFIX));
+                    let updItems = selectedConfigs.filter(x => (x._id.toString().startsWith(NEW_CONF_ID_PREFIX) === false));
+
+                    if(updItems && updItems.length > 0) {
+                        setLoadingSpinnerCtx({enabled: true, text: "Now updating existing configs. Please wait..."} as LoadingSpinnerInfo)
+                        let updatedConfigs = await updateConfigs(selectedEnvironment as EnvTypeEnum, selectedConfigs).finally(() => { cancelLoadingSpinnerCtx() });
                         if(updatedConfigs && updatedConfigs.length > 0) {
                             displayQuickMessage(UIMessageType.SUCCESS_MSG, `${updatedConfigs.length} configuration(s) were successfully updated.`);
-                            setLoadingSpinnerCtx({enabled: true, text: "Now retrieving updated configs. Please wait..."} as LoadingSpinnerInfo)
-                            getConfigList(selectedEnvironment as EnvTypeEnum, appInfo._id?.toString() as string, selectedBucket?._id.toString() as string).then((confList) => {
-                                if(confList) {
-                                    setConfigList(confList);
-                                }
-                                else {
-                                    displayQuickMessage(UIMessageType.ERROR_MSG, "Failed to successfully retrieve updated configurations.");
-                                }
-                            })
-                            .finally(() => {
-                                setLoadingSpinnerCtx({enabled: false, text: ``})
-                            })
                         }
                         else {
                             displayQuickMessage(UIMessageType.ERROR_MSG, "Configurations were not updated successfully.");
+                        }
+                    }
+
+                    if(newAdders && newAdders.length > 0) {
+                        setLoadingSpinnerCtx({enabled: true, text: "Now adding new configs. Please wait..."} as LoadingSpinnerInfo)
+                        let addedConfigs = await addConfigs(selectedEnvironment as EnvTypeEnum, newAdders).finally(() => { cancelLoadingSpinnerCtx() });
+                        if(addedConfigs && addedConfigs.length > 0) {
+                            displayQuickMessage(UIMessageType.SUCCESS_MSG, `${addedConfigs.length} configuration(s) were successfully added.`);
+                        }
+                        else {
+                            displayQuickMessage(UIMessageType.ERROR_MSG, "Configurations were not added successfully.");
+                        }
+                    }
+
+                    setLoadingSpinnerCtx({enabled: true, text: "Now refreshing config list. Please wait..."} as LoadingSpinnerInfo)
+                    getConfigList(selectedEnvironment as EnvTypeEnum, appInfo._id?.toString() as string, selectedBucket?._id.toString() as string).then((confList) => {
+                        if(confList) {
+                            setConfigList(confList);
+                        }
+                        else {
+                            displayQuickMessage(UIMessageType.ERROR_MSG, "Failed to successfully refresh list of configurations.");
                         }
                     })
                     .finally(() => {
@@ -203,17 +219,38 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
     async function onAddAction() {
         if(selectedEnvironment && selectedEnvironment.length > 0 && appInfo && appInfo._id && appInfo._id.toString().length > 0) {
             if(selectedBucket && selectedBucket._id && selectedBucket._id.toString().length > 0) {
-                let mteDialogProps: MultiTextEntryDialogProps = {
-                    onFormClosed: onMultiTextEntryDataAvailable,
-                    title: "Add New Configs",
-                    warningText: `Please specify name(s) for new configuration items (comma separated).`,
-                    textArrayLabel: "New Config Names (comma separated)",
-                    textArrayProhibitedValues: configList?.map(x => x.name) ?? [],
-                    textArrayInputMinWidth: 100,
-                    contextualInfo: { key: "ADD_CONFIGS", value: null }
+
+                let newConf : ConfigItem = {
+                    _id: NEW_CONF_ID_PREFIX + crypto.randomUUID(), //important. do not change formating
+                    ownerElementId: appInfo._id?.toString() as string,
+                    contextProperties: [],
+                    lastUpdatedOn: new Date(),
+                    name: "",
+                    value: "",
+                    bucketId: selectedBucket?._id.toString() as string,
+                    description: "",
+                    contentType: ConfigContentTypeEnum.JSON,
+                    createdOn: new Date(),
+                    createdBy: loggedInUser.email,
+                    associatedProperties: []
                 }
-                setMultiTextEntryDialogProps(mteDialogProps)
-                multiTextEntryModalActioner.open()
+
+                let existingConfigs = rfdcCopy<ConfigItem[]>(configList) as ConfigItem[];
+                let newConfigList = [newConf, ...existingConfigs];
+                setConfigList(newConfigList);
+
+
+                // let mteDialogProps: MultiTextEntryDialogProps = {
+                //     onFormClosed: onMultiTextEntryDataAvailable,
+                //     title: "Add New Configs",
+                //     warningText: `Please specify name(s) for new configuration items (comma separated).`,
+                //     textArrayLabel: "New Config Names (comma separated)",
+                //     textArrayProhibitedValues: configList?.map(x => x.name) ?? [],
+                //     textArrayInputMinWidth: 100,
+                //     contextualInfo: { key: "ADD_CONFIGS", value: null }
+                // }
+                // setMultiTextEntryDialogProps(mteDialogProps)
+                // multiTextEntryModalActioner.open()
             }
         }
     }
@@ -228,6 +265,11 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
                 if(otherBucketOptions && otherBucketOptions.length > 0) {
                     let selectedConfigs = getTableViewSelectedRows(false) ?? []
                     if(selectedConfigs.length > 0) {
+                        let currConfIdList = configList.map(c => c._id.toString() as string)
+                        if(selectedConfigs.some(x => !x._id || x._id.length === 0 || (currConfIdList.includes(x._id.toString() as string) === false))) {
+                            displayQuickMessage(UIMessageType.ERROR_MSG, "Newly added configs cannot be moved. Please save them first before attempting to move them.");
+                            return;
+                        }
                         if(targetBucketId && targetBucketId.length > 0) {
                             bucket = buckMap.get(targetBucketId) ?? null
                             if(bucket && bucket._id) {
@@ -277,6 +319,11 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
                 if(otherBucketOptions && otherBucketOptions.length > 0) {
                     let selectedConfigs = getTableViewSelectedRows(false) ?? []
                     if(selectedConfigs.length > 0) {
+                        let currConfIdList = configList.map(c => c._id.toString() as string)
+                        if(selectedConfigs.some(x => !x._id || x._id.length === 0 || (currConfIdList.includes(x._id.toString() as string) === false))) {
+                            displayQuickMessage(UIMessageType.ERROR_MSG, "Newly added configs cannot be copied. Please save them first before attempting to copy them.");
+                            return;
+                        }
                         if(targetBucketId && targetBucketId.length > 0) {
                             bucket = buckMap.get(targetBucketId) ?? null
                             if(bucket && bucket._id) {
@@ -323,13 +370,17 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
                 if(jsonConfigViewEnabled === false) {
                     let selectedConfigs = getTableViewSelectedRows(false) ?? [];
                     if(selectedConfigs.length > 0) {
+                        let confIdStrList = configList.map(x => x._id.toString() as string)
+                        let backendDelConfigs = selectedConfigs.filter(x => x._id && (x._id.length > 0) && confIdStrList.includes(x._id.toString() as string)) ?? []; 
+                        let plainDelConfigs = selectedConfigs.filter(x => !x._id || x._id.length === 0 || !confIdStrList.includes(x._id.toString() as string)) ?? []; 
+                        
                         let appDeleteConfirmData: ConfirmationDialogProps = {
                             onFormClosed: onConfirmationDataAvailable,
                             title: "Please Confirm",
                             warningText_main: `Please confirm deletion of configuration items`,
                             warningText_other: `WARNING: Configs might not be recoverable after deletion. Are you sure you want to completely delete selected configs?`,
                             actionButtonText: "Proceed",
-                            contextualInfo: { key: "DELETE_CONFIGS", value: selectedConfigs },
+                            contextualInfo: { key: "DELETE_CONFIGS", value: {beDel: backendDelConfigs, plainDel: plainDelConfigs} },
                         }
                         setConfirmationDialogProps(appDeleteConfirmData)
                         confirmationModalActioner.open()
@@ -345,7 +396,7 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
         if(selectedEnvironment && selectedEnvironment.length > 0 && appInfo && appInfo._id && appInfo._id.toString().length > 0) {
             if(selectedBucket && selectedBucket._id && selectedBucket._id.toString().length > 0 && configList && configList.length > 0) {
                 if(jsonConfigViewEnabled === true) {
-                    selectedConfigs = getEditorViewModifiedConfigList(false);
+                    selectedConfigs = getEditorViewConfigList(false);
                 }
                 else {
                     selectedConfigs = getTableViewSelectedRows(true, false);
@@ -428,38 +479,38 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
         if(contextualInfo && contextualInfo.key) {
             if(proceed === ConfirmationDialogActionType.PROCEED) {
                 if(contextualInfo.key === "DELETE_CONFIGS") {
-                    let selectedConfigs = contextualInfo?.value as ConfigItem[] | null
-                    if(selectedConfigs && selectedConfigs.length > 0) {
-                        setLoadingSpinnerCtx({enabled: true, text: "Now deleting configs. Please wait..."} as LoadingSpinnerInfo)
-                        deleteConfigs(selectedEnvironment as EnvTypeEnum, selectedConfigs).then((res) => {
-                            if(res === true) {
-                                displayQuickMessage(UIMessageType.SUCCESS_MSG, `Configuration(s) were successfully deleted.`);
-                                setLoadingSpinnerCtx({enabled: true, text: "Now retrieving updated configs. Please wait..."} as LoadingSpinnerInfo)
-                                getConfigList(selectedEnvironment as EnvTypeEnum, appInfo._id?.toString() as string, selectedBucket?._id.toString() as string).then((confList) => {
-                                    if(confList) {
-                                        setConfigList(confList);
-                                    }
-                                    else {
-                                        displayQuickMessage(UIMessageType.ERROR_MSG, "Failed to successfully refresh list of configurations.");
-                                    }
-                                })
-                                .finally(() => {
-                                    setLoadingSpinnerCtx({enabled: false, text: ``})
-                                })
-                            }
-                            else {
-                                displayQuickMessage(UIMessageType.ERROR_MSG, "Configurations were not deleted successfully.");
-                            }
-                        })
-                        .finally(() => {
-                            setLoadingSpinnerCtx({enabled: false, text: ``})
-                        })
+                    let beDelConfigs = (contextualInfo?.value.beDel as ConfigItem[]) ?? [];
+                    let plainDelConfigs = (contextualInfo?.value.plainDel as ConfigItem[]) ?? [];
+
+                    if(plainDelConfigs.length === 0 && beDelConfigs.length === 0) {
+                        displayQuickMessage(UIMessageType.ERROR_MSG, "No configurations were selected for intended action.");
+                        return;
                     }
-                    else {
+                    
+                    if(beDelConfigs.length > 0) {
+                        setLoadingSpinnerCtx({enabled: true, text: "Now deleting configs. Please wait..."} as LoadingSpinnerInfo)
+                        let beDelRes = await deleteConfigs(selectedEnvironment as EnvTypeEnum, beDelConfigs).finally(() => { setLoadingSpinnerCtx({enabled: false, text: ``}) });
+                        if(beDelRes === true) {
+                            let existingConfigs = rfdcCopy<ConfigItem[]>(configList) as ConfigItem[];
+                            let plainDelIds = plainDelConfigs?.map(x => x._id.toString() as string) ?? [];
+                            let beDelIds = beDelConfigs?.map(x => x._id.toString() as string) ?? [];
+                            let allDelIds = [...plainDelIds, ...beDelIds];
+                            let updConfigList = existingConfigs.filter(x => (allDelIds.includes(x._id.toString()) === false));
+                            setConfigList(updConfigList);
+                            displayQuickMessage(UIMessageType.SUCCESS_MSG, `Configuration(s) were successfully deleted.`);
+                        }
+                        else {
+                            displayQuickMessage(UIMessageType.ERROR_MSG, "Configurations were not deleted successfully.");
+                        }                        
+                    }
+                    else if (plainDelConfigs.length > 0){
+                        let existingConfigs = rfdcCopy<ConfigItem[]>(configList) as ConfigItem[];
+                        let plainDelIds = plainDelConfigs?.map(x => x._id.toString() as string) ?? [];
+                        let updConfigList = existingConfigs.filter(x => (plainDelIds.includes(x._id.toString()) === false));
+                        setConfigList(updConfigList);
                         displayQuickMessage(UIMessageType.ERROR_MSG, "No configurations were selected for intended action.");
                     }
                 }
-                
             }
         }
     }
@@ -556,7 +607,7 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
 
 
     
-    function getEditorViewModifiedConfigList(modifiedItemsOnly: boolean): ConfigItem[]{
+    function getEditorViewConfigList(modifiedItemsOnly: boolean): ConfigItem[]{
         let confItems: ConfigItem[] = [];
         if (editorViewComponentRef.current) {
             confItems = editorViewComponentRef.current.getConfigsListWithModifications(modifiedItemsOnly) ?? [];

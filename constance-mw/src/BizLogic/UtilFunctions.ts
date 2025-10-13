@@ -438,6 +438,16 @@ export function splitByDelimiters(input: string, delimiters: string[]): string[]
 }
 
 
+export function containsSpecialChars(inputStrings: string[]) {
+    for(let i = 0; i < inputStrings.length; i++){
+        const charsExpression = /[`!@#$%^&*()+=\[\]{};':"\\|,<>\/?~]/;
+        let val = charsExpression.test(inputStrings[i]);
+        if (val === true) { return true; }
+    }
+    return false;
+}
+
+
 export async function performBackendCall(url: string, action: string, data: any) {
     const AX_AGENT = new https.Agent({ rejectUnauthorized: false });
     try {

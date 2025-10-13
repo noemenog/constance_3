@@ -1,6 +1,5 @@
 import express, { Request, Response } from "express";
 import * as mongo from "mongodb";
-import { checkDuplicatesIgnoreCase, containsSpecialChars, getFilterForBucket } from "../../Deprecated/generalUtils";
 import crypto from "crypto"
 import multer from "multer"
 import { DBCollectionTypeEnum, EnvTypeEnum, ErrorSeverityValue } from "../../Models/Constants";

@@ -88,11 +88,20 @@ export enum ErrorSeverityValue {
 
 
 export enum ConfigContentTypeEnum {
-    JSON = "JSON",
-    XML = "XML",
     STRING = "STRING",
     NUMBER = "NUMBER",
     BOOLEAN = "BOOLEAN",
+    PYTHON = "PYTHON",
+    JSON = "JSON",
+    XML = "XML",
+    YAML = "YAML",
+    POWERSHELL = "POWERSHELL",
+    BASH_SHELL = "BASH_SHELL",
+    HTML = "HTML", 
+    CSS = "CSS", 
+    DOCKERFILE = "DOCKERFILE",
+    VBSCRIPT = "VBSCRIPT",
+    SQL = "SQL"
 }
 
 
