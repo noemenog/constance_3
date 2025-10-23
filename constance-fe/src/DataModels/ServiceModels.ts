@@ -80,7 +80,6 @@ export interface CDomainData {
     appInfoCollection: AppInfo[];
     appInfo : AppInfo | null;
     bucketList : Bucket[];
-    configList: ConfigItem[];
     selectedConfig: ConfigItem | null;
     currentEnv: EnvTypeEnum | null;
     destEnv : EnvTypeEnum | null;

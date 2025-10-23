@@ -4,7 +4,7 @@ import crypto, { randomUUID } from "crypto"
 import { DBCollectionTypeEnum, EnvTypeEnum, ErrorSeverityValue } from "../../Models/Constants";
 import { AppInfo, Bucket, ConfigItem } from "../../Models/ServiceModels";
 import { ResponseData, User } from "../../Models/HelperModels";
-import { includeContextDetailsForApp, performAppAdd, performAppDelete, performAppUpdate } from "../../BizLogic/AppInfoLogic";
+import { includeContextDetailsForApp, performAppAdd, performAppClone, performAppDelete, performAppUpdate } from "../../BizLogic/AppInfoLogic";
 import { Filter } from "mongodb";
 import { ServiceModelRepository } from "../../Repository/ServiceModelRepository";
 import { GetEnvironmentType } from "../../BizLogic/BasicCommonLogic";
@@ -32,6 +32,7 @@ appInfoRouter.get("/:env/appinfo/get-all", async (req: Request, res: Response) =
         res.status(500).json(resp);
     }
 });
+
 
 
 appInfoRouter.get("/:env/appinfo/get-details", async (req: Request, res: Response) => {
@@ -90,6 +91,8 @@ appInfoRouter.post("/:env/appinfo/add", async (req: Request, res: Response) => {
     }
 });
 
+
+
 appInfoRouter.post("/:env/appinfo/update", async (req: Request, res: Response) => {
     try {
         let env : EnvTypeEnum = GetEnvironmentType(req.params.env);
@@ -117,6 +120,7 @@ appInfoRouter.post("/:env/appinfo/update", async (req: Request, res: Response) =
 });
 
 
+
 appInfoRouter.delete("/:env/appinfo/delete", async (req: Request, res: Response) => {
     try {
         let env : EnvTypeEnum = GetEnvironmentType(req.params.env);
@@ -131,6 +135,57 @@ appInfoRouter.delete("/:env/appinfo/delete", async (req: Request, res: Response)
         
         let result : EnvTypeEnum[] = await performAppDelete(env, appId, delEnv);
         res.status(200).send({ payload: result } as ResponseData);
+    }
+    catch (e: any) {
+        let resp = {
+            payload: undefined,
+            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
+        }
+        console.error(resp);
+        res.status(500).json(resp);
+    }
+});
+
+
+
+appInfoRouter.post("/:env/appinfo/export-all", async (req: Request, res: Response) => {
+    try {
+        let env : EnvTypeEnum = GetEnvironmentType(req.params.env);
+        let src : EnvTypeEnum = GetEnvironmentType(req.query.src?.toString() ?? '');
+        let dest : EnvTypeEnum = GetEnvironmentType(req.query.dest?.toString() ?? '');
+
+        const user = (req.headers.user) ? JSON.parse(req.headers.user as string) as User : null;
+        if (!user) {
+            throw new Error(`Cannot export configs! Input 'user' info is invalid!`);
+        }
+
+        let appId : string = req.query.appId?.toString() ?? ''
+        if (!appId || appId === 'undefined' || appId.trim().length === 0) {
+            throw new Error(`Input 'appId' cannot be null or empty or undefined`);
+        }
+
+        if (src === dest) {
+            throw new Error(`Input 'src' and 'dest' cannot be the same`);
+        }
+
+        let srcAppRepo = new ServiceModelRepository<AppInfo>(DBCollectionTypeEnum.APPINFO_COLLECTION, src)
+        let app = await srcAppRepo.GetWithId(appId) 
+        if(!app) {
+            throw new Error(`Could not export app info. Intended source app was not found at source environment`);
+        }
+
+        let srcBuckRepo = new ServiceModelRepository<Bucket>(DBCollectionTypeEnum.BUCKET_COLLECTION, src)
+        let srcBuckets = await srcBuckRepo.GetAllByOwnerElementId(appId);
+        if(srcBuckets && srcBuckets.length > 0) {
+            for(let bucket of srcBuckets) {
+                await exportBucket(src, bucket, dest, app, user);
+            }
+        }
+        else {
+            throw new Error(`Could not export buckets. Intended source buckets were not found at source environment`);
+        }
+
+        res.status(200).send({ payload: true } as ResponseData);
     }
     catch (e: any) {
         let resp = {
@@ -180,7 +235,7 @@ appInfoRouter.post("/:env/appinfo/manage-lock", async (req: Request, res: Respon
             res.status(200).send({ payload: updatedApp } as ResponseData);
         }
         else {
-            throw new Error(`Could not update project lock status because no such project was found in the system`);
+            throw new Error(`Could not update app lock status because no such app was found in the system`);
         }
     }
     catch (e: any) {
@@ -188,49 +243,6 @@ appInfoRouter.post("/:env/appinfo/manage-lock", async (req: Request, res: Respon
             payload: undefined,
             error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
         }
-        res.status(500).json(resp);
-    }
-});
-
-
-appInfoRouter.post("/:env/appinfo/export-all", async (req: Request, res: Response) => {
-    try {
-        let env = req.params.env;
-        let appId : string = req.query.appId?.toString() ?? ''
-        let src : string = req.query.src?.toString() ?? ''
-        let dest : string = req.query.dest?.toString() ?? ''
-
-        const user = (req.headers.user) ? JSON.parse(req.headers.user as string) as User : null;
-
-        if (!appId || appId === 'undefined' || appId.trim().length === 0) {
-            throw new Error(`Input 'appId' cannot be null or empty or undefined`);
-        }
-        if (!src || src === 'undefined' || src.trim().length === 0) {
-            throw new Error(`Input 'src' cannot be null or empty or undefined`);
-        }
-        if (!dest || dest === 'undefined' || dest.trim().length === 0) {
-            throw new Error(`Input 'dest' cannot be null or empty or undefined`);
-        }
-
-        if (!user) {
-            throw new Error(`Cannot export configs! Input 'user' info is invalid!`);
-        }
-
-        let srcBuckRepo = new ServiceModelRepository<Bucket>(DBCollectionTypeEnum.BUCKET_COLLECTION, src)
-        let srcBuckets = await srcBuckRepo.GetAllByOwnerElementId(appId);
-        if(srcBuckets && srcBuckets.length > 0) {
-            for(let bucket of srcBuckets) {
-                await exportBucket(src, bucket, dest, user);
-            }
-        }
-        res.status(200).send({ payload: true } as ResponseData);
-    }
-    catch (e: any) {
-        let resp = {
-            payload: undefined,
-            error: { id: crypto.randomUUID(), code: "500", severity: ErrorSeverityValue.ERROR, message: e.message }
-        }
-        console.error(resp);
         res.status(500).json(resp);
     }
 });
@@ -239,20 +251,35 @@ appInfoRouter.post("/:env/appinfo/export-all", async (req: Request, res: Respons
 
 appInfoRouter.post("/:env/appinfo/clone", async (req: Request, res: Response) => {
     try {
-        let env = req.params.env;
-        let appId : string = req.query.appId?.toString() ?? ''
-        let newName : string = req.query.newName?.toString() ?? ''
-        
+        let env : EnvTypeEnum = GetEnvironmentType(req.params.env);
 
-        if (!appId) {
+        const user = (req.headers.user) ? JSON.parse(req.headers.user as string) as User : null
+        if (!user || !user.email) {
+            throw new Error(`Cannot perform expected operation! Input 'user' info is invalid!`);
+        }
+
+        let appId : string = req.query.appId?.toString() ?? ''
+        if (!appId || appId === 'undefined' || appId.trim().length === 0) {
             throw new Error(`Input 'appId' cannot be null or empty or undefined`);
         }
-        if (!newName) {
+
+        let newName : string = req.query.newName?.toString() ?? ''
+        if (!newName || newName === 'undefined' || newName.trim().length === 0) {
             throw new Error(`Input 'newName' cannot be null or empty or undefined`);
         }
+        
+        let appRepo = new ServiceModelRepository<AppInfo>(DBCollectionTypeEnum.APPINFO_COLLECTION, env)
+        let existingApp = await appRepo.GetWithId(appId.trim());
+        if(!existingApp || !existingApp._id) {
+            throw new Error(`Cannot proceed with cloning. No AppInfo was found for the provided app ID`);
+        }
 
-        let result = null // await performAppDelete(env, appId, inDelEnv);
-        res.status(200).send({ payload: result } as ResponseData);
+        let theClone : AppInfo = await performAppClone(existingApp, newName, user);
+        if(theClone) {
+            theClone = await includeContextDetailsForApp(theClone, env, false, true);
+        }
+        
+        res.status(200).send({ payload: theClone } as ResponseData);
     }
     catch (e: any) {
         let resp = {

@@ -1,4 +1,4 @@
-import { Filter, Document, ObjectId, FindOptions, Collection, FindCursor, WithId, Sort, UpdateResult } from "mongodb";
+import { Filter, Document, ObjectId, FindOptions, Collection, FindCursor, WithId, Sort, UpdateResult, AnyBulkWriteOperation } from "mongodb";
 import { BaseRepository } from "./BaseRepository";
 import { IBaseServiceModelRepo as IServiceModelRepository } from "./BaseRepoDefs";
 import { ServiceModel } from "../Models/ServiceModels";
@@ -122,23 +122,53 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
         return result
     }
 
+
     async ReplaceManyOrInsert(ownerElementId: string, replacements: T[]): Promise<T[]> {
-         //bulk update based on project ID
-         const bulkData = replacements.map(item => ( {
-            replaceOne: {
-                upsert: true, //upsert is allowed!
-                filter: { ownerElementId: ownerElementId } as any,
-                replacement: item
+        if (replacements.length === 0) return [];
+
+        // Extract _id values from input elements
+        const inputElementIds = replacements.map(p => p._id);
+
+        // Find existing documents with ownerElementId and _id in inputElementIds
+        let filter = { ownerElementId: ownerElementId, _id: { $in: inputElementIds } }  as Filter<T>
+        const existingDocs = await this.collection.find(filter, { projection: { _id: 1 } }).toArray();
+        const foundExistingIds = new Set(existingDocs.map(doc => doc._id.toString() as string));
+
+        // Prepare bulk operations
+        const bulkOps = replacements.map(elem => {
+            const idStr = elem._id?.toString() as string;
+            if (foundExistingIds.has(idStr)) {
+                // Replace existing document with the new element object
+                return {
+                    replaceOne: {
+                        filter: { _id: elem._id, ownerElementId: ownerElementId } as Filter<T>,
+                        replacement: elem,
+                        upsert: false
+                    }
+                };
+            } 
+            else {
+                // Insert new document if not found
+                return {
+                    insertOne: {
+                        document: elem
+                    }
+                };
             }
-        }));
-        let result = await this.collection.bulkWrite(bulkData);
-        let isSuccessful : boolean = result.isOk() && (result.modifiedCount == replacements.length);
-        if(isSuccessful){
-            const result : T[] = (await this.collection.find({ ownerElementId: ownerElementId } as any)?.toArray()) as T[];
-            return result
+        });
+
+        if (bulkOps.length > 0) {
+            let result = await this.collection.bulkWrite(bulkOps as AnyBulkWriteOperation<T>[]);
+            let isSuccessful : boolean = result.isOk() && (result.modifiedCount == replacements.length);
+            if(isSuccessful){
+                const result : T[] = (await this.collection.find({ ownerElementId: ownerElementId } as any)?.toArray()) as T[];
+                return result
+            }
         }
-        return new Array<T>()
+
+         return new Array<T>()
     }
+
 
     async DeleteManyByOwnerElementId(ownerElementId: string, filters: Array<Filter<T>>|null, ignoreZeroDeletedCount: boolean): Promise<boolean> {
         let finalFilter = (filters && filters.length > 0)
@@ -229,3 +259,33 @@ export class ServiceModelRepository<T extends ServiceModel> extends BaseReposito
     }
 }
     
+
+
+
+
+
+
+
+
+
+
+
+
+    // async ReplaceManyOrInsert(ownerElementId: string, replacements: T[]): Promise<T[]> {
+    //      //bulk update based on project ID
+    //      const bulkData = replacements.map(item => ( {
+    //         replaceOne: {
+    //             upsert: true, //upsert is allowed!
+    //             filter: { ownerElementId: ownerElementId } as any,
+    //             replacement: item
+    //         }
+    //     }));
+    //     let result = await this.collection.bulkWrite(bulkData);
+    //     let isSuccessful : boolean = result.isOk() && (result.modifiedCount == replacements.length);
+    //     if(isSuccessful){
+    //         const result : T[] = (await this.collection.find({ ownerElementId: ownerElementId } as any)?.toArray()) as T[];
+    //         return result
+    //     }
+    //     return new Array<T>()
+    // }
+

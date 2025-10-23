@@ -19,7 +19,7 @@ import { LoadingSpinnerInfo, LoggedInUser } from "../../DataModels/ServiceModels
 import { SpButton } from "../../CommonComponents/SimplePieces";
 import { AppInfo, Bucket } from "../../DataModels/ServiceModels";
 import GeneralInfoDialog, { GeneralInfoDialogProps, GeneralInfoUIContext } from "../../FormDialogs/GeneralInfoDialog";
-import { addNewAppInfo } from "../../BizLogicUtilities/FetchData";
+import { addNewAppInfo, deleteAppInfo } from "../../BizLogicUtilities/FetchData";
 import { renderToStaticMarkup } from "react-dom/server"
 import { setupPermissionsForNewElement } from "../../BizLogicUtilities/Permissions";
 
@@ -289,11 +289,15 @@ const AppInfoList: React.FC<AppInfoListProps> = () => {
                     setLoadingSpinnerCtx({enabled: true, text: "Now creating new app context. Please wait..."} as LoadingSpinnerInfo)      
                     let addedAppInfo = await addNewAppInfo(EnvTypeEnum.DEVELOPMENT, newApp).finally(() => { cancelLoadingSpinnerCtx() })
                     if(addedAppInfo) {
-                        let res = await setupPermissionsForNewElement(loggedInUser, addedAppInfo, PermEntityTypeEnum.APP, false)
-                        if (res[0] === true) {
+                        let res = await setupPermissionsForNewElement(loggedInUser, [addedAppInfo], PermEntityTypeEnum.APP, false)
+                        if (res === true) {
                             displayQuickMessage(UIMessageType.SUCCESS_MSG, "New AppInfo added successfully!");
                             clearCurrentAppInfo();
                             navigate(`/${ActionSceneEnum.APPHOME}/${addedAppInfo._id}/overview`)
+                        }
+                        else {
+                            await deleteAppInfo(EnvTypeEnum.DEVELOPMENT, addedAppInfo, "ALL");
+                            displayQuickMessage(UIMessageType.ERROR_MSG, "App creation failed!");
                         }
                     }
                     else{

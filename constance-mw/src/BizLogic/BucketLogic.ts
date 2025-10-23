@@ -102,7 +102,7 @@ export async function performBucketUpdate(bucket: Bucket) : Promise<Bucket|null>
         throw new Error(`Please use at least two characters for bucket name`)
     }
 
-    //check format of project name
+    //check format of bucket name
     verifyNaming([bucket.name], NamingContentTypeEnum.BUCKET)
 
     //NOTE: check if appName already exists. If a app exists in the system and is set to "disabled", it still count in name checking - no duplicates!
@@ -207,7 +207,7 @@ export async function performBucketDelete(currEnv: string, bucketId: string, del
 
 
 
-export async function exportBucket(srcEnv: EnvTypeEnum|string, bucket: Bucket, destEnv: EnvTypeEnum|string, user: User) {
+export async function exportBucket(srcEnv: EnvTypeEnum|string, bucket: Bucket, destEnv: EnvTypeEnum|string, srcAppInstance: AppInfo|null, user: User) {
     if (srcEnv.toString().toLowerCase().trim() === destEnv.toString().toLowerCase().trim()) {
         throw new Error(`Source and destination environments cannot be the same. Configs cannot be exported.`);
     }
@@ -216,20 +216,26 @@ export async function exportBucket(srcEnv: EnvTypeEnum|string, bucket: Bucket, d
         try {
             let appId = bucket.ownerElementId;
             let buckId = bucket._id?.toString() as string;
+            
             //handle app instance
             let srcAppRepo = new ServiceModelRepository<AppInfo>(DBCollectionTypeEnum.APPINFO_COLLECTION, srcEnv)
-            let app = await srcAppRepo.GetWithId(appId)
+            let app = srcAppInstance ? srcAppInstance : await srcAppRepo.GetWithId(appId)
             if(app) {
+                delete app._id;
                 app._id = new ObjectId(appId)
                 app.enabled = true;
                 let destAppRepo = new ServiceModelRepository<AppInfo>(DBCollectionTypeEnum.APPINFO_COLLECTION, destEnv)
                 await destAppRepo.ReplaceManyOrInsert(appId, [app]);
             }
-
+            else {
+                throw new Error(`Could not export app info. Intended source app was either not supplied or not found at source environment`);
+            }
+            
             //handle bucket instance
             let srcBuckRepo = new ServiceModelRepository<Bucket>(DBCollectionTypeEnum.BUCKET_COLLECTION, srcEnv)
             let srcBucket = await srcBuckRepo.GetWithId(buckId)
             if(srcBucket) {
+                delete srcBucket._id;
                 srcBucket._id = new ObjectId(buckId)
                 let destBucketRepo = new ServiceModelRepository<Bucket>(DBCollectionTypeEnum.BUCKET_COLLECTION, destEnv)
                 await destBucketRepo.ReplaceManyOrInsert(appId, [srcBucket]);

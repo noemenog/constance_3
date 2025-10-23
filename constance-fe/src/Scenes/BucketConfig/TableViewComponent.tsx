@@ -1,6 +1,6 @@
 import React, { useState, useContext, useCallback, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { CellDoubleClickedEvent, ColDef, ColGroupDef, GetContextMenuItemsParams, GridApi, NewValueParams, SuppressKeyboardEventParams, ValueFormatterParams } from 'ag-grid-community';
+import { CellDoubleClickedEvent, ColDef, ColGroupDef, GetContextMenuItemsParams, GridApi, NewValueParams, RowClickedEvent, RowSelectedEvent, SuppressKeyboardEventParams, ValueFormatterParams } from 'ag-grid-community';
 import { Box, Divider, IconButton, InputBase, Slide, Table, TableBody, TableCell, TableRow, Tooltip, Typography, useTheme } from '@mui/material';
 import { themeDarkBlue, tokens } from '../../theme';
 import { AppInfo, Bucket, CDomainData, ConfigItem, LoadingSpinnerInfo, LoggedInUser } from '../../DataModels/ServiceModels';
@@ -10,7 +10,7 @@ import { useCStore } from '../../DataModels/ZuStore';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import { Editor, Monaco } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
-import EditorComp from '../../CommonComponents/EditorComp';
+import EditorComp, { EditorCompRef } from '../../CommonComponents/EditorComp';
 import { KeyboardDoubleArrowLeftOutlined, KeyboardDoubleArrowRightOutlined, UnfoldMoreDoubleOutlined } from '@mui/icons-material';
 
 enum TVActionTypeEnum {
@@ -26,7 +26,6 @@ interface TableViewComponentProps {
     currentConfigs: ConfigItem[],
     darkMode?: boolean,
     disableMiniMap?: boolean,
-    editorContentLanguage?: string,
     onSaveAction: () => void,
     onDeleteAction: () => void,
     onAddAction: () => void,
@@ -41,7 +40,7 @@ interface TableViewComponentRef {
 
 const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentProps>(({ 
     onSaveAction, onCompareAction, onDeleteAction, onMoveAction, onCopyAction, onAddAction, 
-    currentConfigs, darkMode = true, disableMiniMap = true, editorContentLanguage = 'json' }, ref) => {
+    currentConfigs, darkMode = true, disableMiniMap = true }, ref) => {
 
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
@@ -69,7 +68,7 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
     const [quickFilterText, setQuickFilterText] = useState('')
 
     const containerRef = useRef<any>();
-    const valueEditorRef = useRef<null|editor.IStandaloneCodeEditor>(null);
+    const editorRef = useRef<EditorCompRef>(null);
 
 
 
@@ -81,13 +80,14 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
 
 
     useEffect(() => {
-        placePageTitle("Configs")
+        placePageTitle("ConfigTableView")
     }, []);
 
 
     useEffect(() => {
         setConfigList(currentConfigs)
     }, [currentConfigs]);
+
 
     const compareEnvs : string[] = useMemo(() => {
         let envs = new Array<string>();
@@ -140,34 +140,6 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
                     return opts
                 },
             },
-            // valueGetter: params => {
-            //     if(params && params.data) {
-            //         if(params.data.currentVersionId && params.data.currentVersionId.length > 0) {
-            //             if(params.data.versions && params.data.versions.length > 0) {
-            //                 let verItem = (params.data.versions as VersionContext[]).find(x => x.id === params.data.currentVersionId)
-            //                 if(verItem) {
-            //                     return verItem.versionNumber;
-            //                 }
-            //             }
-            //         }
-            //     }
-            //     return ""
-            // },
-            // valueSetter: (params: any) => { 
-            //     if(params && params.newValue && params.newValue > 0) {
-            //         if(params.data.versions && params.data.versions.length > 0) {
-            //             let verItem = (params.data.versions as VersionContext[]).find(x => x.versionNumber === params.newValue)
-            //             if(verItem) {
-            //                 params.data.currentVersionId = verItem.id
-            //                 return true;
-            //             }
-            //         }
-            //         return false;
-            //     }
-            //     else {
-            //         return false;
-            //     }
-            // },
         },
         {
             //version will be formatted as: "### - date [idsid]"
@@ -438,12 +410,54 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
     }
 
 
+    function onDataRowClicked(event: RowClickedEvent<any, any>): void {
+        if(event && event.data) {
+            setAndFormatEditorContent(event.data.value, event.data.contentType);
+        }
+    }
+
+    function onDataRowSelected(event: RowSelectedEvent<any, any>): void {
+        if(event && event.data) {
+            setAndFormatEditorContent(event.data.value, event.data.contentType);
+        }
+    }
+
+    function setAndFormatEditorContent(value: string, contentType: ConfigContentTypeEnum) {
+        if( editorRef && editorRef.current) {
+            editorRef.current.setValue(value.toString().trim());
+            editorRef.current.setLanguage(getLanguageForContentType(contentType));
+            editorRef.current.formatDocument()
+        }
+    }
+
+
+    function getLanguageForContentType(contentType: ConfigContentTypeEnum): string {
+        switch (contentType) {
+            case ConfigContentTypeEnum.JSON:
+                return "json";
+            case ConfigContentTypeEnum.POWERSHELL:
+                return "powershell";
+            case ConfigContentTypeEnum.PYTHON:
+                return "python";
+            case ConfigContentTypeEnum.XML:
+                return "xml";
+            case ConfigContentTypeEnum.YAML:
+                return "yaml";
+            case ConfigContentTypeEnum.HTML:
+                return "html";
+            case ConfigContentTypeEnum.DOCKERFILE:
+                return "dockerfile";
+            case ConfigContentTypeEnum.SQL:
+                return "sql";
+            default:
+                return "plaintext";
+        }
+    }
+
     //******************************************************************************************** */
 
-    
 
 
-   
 
 
 
@@ -461,6 +475,8 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
                             onGridReady={onGridReady}
                             theme={themeDarkBlue}
                             rowSelection={{ mode: "multiRow", checkboxes: true, headerCheckbox: true, selectAll: "filtered" }}
+                            onRowClicked={onDataRowClicked}
+                            onRowSelected={onDataRowSelected}
                             getContextMenuItems={getContextMenuItems}
                             quickFilterText={quickFilterText} 
                             rowHeight={35}
@@ -507,9 +523,11 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
                                 darkMode={darkMode}
                                 editorHeight={"76.5vh"}
                                 disableMiniMap={disableMiniMap} 
-                                editorContentLanguage={editorContentLanguage} 
+                                editorContentLanguage={"json"} 
                                 editorContent={""}
-                                ref={valueEditorRef.current}
+                                ref={editorRef}
+                                initFontSize={14}
+                                onEditorContentChanged={onEditorContentChanged}
                             />
                         </Box>
                     </Box>}         
@@ -527,6 +545,45 @@ const TableViewComponent = forwardRef<TableViewComponentRef, TableViewComponentP
 export default TableViewComponent
 export type { TableViewComponentRef };
 
+
+
+
+
+
+
+
+
+
+
+
+// valueGetter: params => {
+            //     if(params && params.data) {
+            //         if(params.data.currentVersionId && params.data.currentVersionId.length > 0) {
+            //             if(params.data.versions && params.data.versions.length > 0) {
+            //                 let verItem = (params.data.versions as VersionContext[]).find(x => x.id === params.data.currentVersionId)
+            //                 if(verItem) {
+            //                     return verItem.versionNumber;
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     return ""
+            // },
+            // valueSetter: (params: any) => { 
+            //     if(params && params.newValue && params.newValue > 0) {
+            //         if(params.data.versions && params.data.versions.length > 0) {
+            //             let verItem = (params.data.versions as VersionContext[]).find(x => x.versionNumber === params.newValue)
+            //             if(verItem) {
+            //                 params.data.currentVersionId = verItem.id
+            //                 return true;
+            //             }
+            //         }
+            //         return false;
+            //     }
+            //     else {
+            //         return false;
+            //     }
+            // },
 
 
 
@@ -985,6 +1042,7 @@ export type { TableViewComponentRef };
                             <Divider sx={{width: 10, mt: 2, mb: 2}} />
                         </Box>
                     </Slide> */}
+
 
 
 

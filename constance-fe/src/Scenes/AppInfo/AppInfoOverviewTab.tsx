@@ -49,6 +49,7 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
     const initConfigs = useCStore((state) => state.initConfigs);
     const selectedEnvironment = useCStore((state) => state.selectedEnvironment);
     const setSelectedBucket = useCStore((state) => state.setSelectedBucket);
+    const setCurrentAppBasicInfo = useCStore((state) => state.setCurrentAppBasicInfo);
 
     const [appInfo, setAppInfo] = useState<AppInfo>(appObj);
     const [bucketList, setBucketList] = useState<Bucket[]>([]);
@@ -225,20 +226,7 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
                 return getEnviList(params.data as Bucket)?.envListShortSingleString || '';
             },
             cellStyle: (params: any) => { return { fontWeight: 'normal', textAlign: 'left' } },
-        },
-        {
-            headerName: "Perm",
-            field: "description",
-            resizable: true,
-            filter: 'text',
-            cellDataType: 'text',
-            minWidth: 200,
-            editable: false,
-            sortable: false,
-            sortingOrder: ["asc", "desc"],
-            cellStyle: (params: any) => { return { fontWeight: 'normal', textAlign: 'left' } },
-        },
-        
+        }        
     ];
     
 
@@ -258,8 +246,11 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
     }
 
 
+    //====================================== BUCKET ===============================================
+
     function performExportBucketAction(bucket: Bucket): void {
         //___PERM___ if (isUserApprovedForCoreAction(loggedInUser, appInfo, PermissionActionEnum.CLONE_APPINFO) === false) { return; }
+        let optList = sort(Array.from(getEnumValuesAsArray(EnvTypeEnum))).asc(a => a.toString().toUpperCase())
         let giDialogProps: GeneralInfoDialogProps = {
             onFormClosed: onGenInfoDataAvailable,
             title: "Please select source & destination for bucket export",
@@ -267,7 +258,7 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
             showSecondarySelection: true,
             selectionLabel: "Source Environment",
             secondarySelectionLabel: "Destination Environment",
-            selectionCtrlOptions: Array.from(getEnumValuesAsArray(EnvTypeEnum)),
+            selectionCtrlOptions: optList,
             contextualInfo: { key: "EXPORT_BUCKET", value: bucket }
         }
         setGeneralInfoDialogProps(giDialogProps)
@@ -307,6 +298,8 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
 
 
 
+    //============================================== APPINFO ==================================================
+
     function handleProfileChangeAction(): void {
         //___PERM___ if (isUserApprovedForCoreAction(loggedInUser, appInfo, PermissionActionEnum.CLONE_APPINFO) === false) { return; }
         let giDialogProps: GeneralInfoDialogProps = {
@@ -329,6 +322,7 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
     
     function handleExportALLAction(event: any): void {
         //___PERM___ if (isUserApprovedForCoreAction(loggedInUser, appInfo, PermissionActionEnum.CLONE_APPINFO) === false) { return; }
+        let optList = sort(Array.from(getEnumValuesAsArray(EnvTypeEnum))).asc(a => a.toString().toUpperCase())
         let giDialogProps: GeneralInfoDialogProps = {
             onFormClosed: onGenInfoDataAvailable,
             title: "Please select export source & destination",
@@ -336,7 +330,7 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
             showSecondarySelection: true,
             selectionLabel: "Source Environment",
             secondarySelectionLabel: "Destination Environment",
-            selectionCtrlOptions: Array.from(getEnumValuesAsArray(EnvTypeEnum)),
+            selectionCtrlOptions: optList,
             contextualInfo: { key: "EXPORT_ALL_FOR_APPINFO", value: null }
         }
         setGeneralInfoDialogProps(giDialogProps)
@@ -361,12 +355,13 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
 
     function handleDeleteAppAction(event: any): void {
         //__PERM__ if (isUserApprovedForCoreAction(loggedInUser, appInfo, PermissionActionEnum.DELETE_APPINFO) === false) { return; }
+        let opts = (getEnviList(appInfo).envListRawFormatArray ?? []).filter((a: string) => a.toLowerCase() !== EnvTypeEnum.DEVELOPMENT.toLowerCase()).concat("ALL");
         let giDialogProps: GeneralInfoDialogProps = {
             onFormClosed: onGenInfoDataAvailable,
             title: "Please select environment where app presence will be removed",
             showSelectionCtrl: true, 
             selectionLabel: "Environment",
-            selectionCtrlOptions: (getEnviList(appInfo).envListRawFormatArray ?? []).filter((a: string) => a.toLowerCase() !== EnvTypeEnum.DEVELOPMENT.toLowerCase()).concat("ALL"),
+            selectionCtrlOptions: opts,
             contextualInfo: { key: "DELETE_APPINFO", value: null }
         }
         setGeneralInfoDialogProps(giDialogProps)
@@ -394,6 +389,7 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
                     let updatedAppInfo = await updateAppInfo(EnvTypeEnum.DEVELOPMENT, updApp).finally(() => { cancelLoadingSpinnerCtx() })
                     if(updatedAppInfo) {
                         setAppInfo(updatedAppInfo)
+                        setCurrentAppBasicInfo(updatedAppInfo);
                         displayQuickMessage(UIMessageType.SUCCESS_MSG, "AppInfo updated successfully!");
                     }
                     else {
@@ -410,6 +406,17 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
                     let res = await exportAll(selectedEnvironment, appInfo._id.toString(), srcEnv as EnvTypeEnum, destEnv as EnvTypeEnum).finally(() => { cancelLoadingSpinnerCtx() })
                     if(res) {
                         displayQuickMessage(UIMessageType.SUCCESS_MSG, "App buckets exported successfully!");
+                        fetchAppDetails(selectedEnvironment, appInfo._id.toString(), false).then(appRes => {
+                            if(appRes && appRes._id) {
+                                setAppInfo(appRes);
+                                getBucketList(selectedEnvironment, appInfo._id.toString()).then(buckRes => {
+                                    if(buckRes) {
+                                        let sortedBucks = sort(buckRes).asc(a => a.name)
+                                        setBucketList(sortedBucks);
+                                    }
+                                })
+                            }
+                        })
                     }
                     else {
                         displayQuickMessage(UIMessageType.ERROR_MSG, "Failed to successfully export app data!");
@@ -448,17 +455,30 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
                         return;
                     }
                     setLoadingSpinnerCtx({enabled: true, text: "Now creating a clone/copy of current app info. Please wait..."} as LoadingSpinnerInfo)
-                    let clonedAppInfo = await cloneAppInfo(selectedEnvironment, appInfo._id.toString() as string, newName).finally(() => { cancelLoadingSpinnerCtx() })
+                    let clonedAppInfo = await cloneAppInfo(EnvTypeEnum.DEVELOPMENT, appInfo._id.toString() as string, newName).finally(() => { cancelLoadingSpinnerCtx() })
                     if(clonedAppInfo) {
-                        let res = await setupPermissionsForNewElement(loggedInUser, clonedAppInfo, PermEntityTypeEnum.APP, true)
-                        if (res[0] === true) {
+                        let res = await setupPermissionsForNewElement(loggedInUser, [clonedAppInfo], PermEntityTypeEnum.APP, true)
+                        if (res === true) {
+                            
+                            let clonedAppBuckets = await getBucketList(EnvTypeEnum.DEVELOPMENT, clonedAppInfo._id.toString());
+                            if(clonedAppBuckets && clonedAppBuckets.length > 0) {
+                                let res = await setupPermissionsForNewElement(loggedInUser, clonedAppBuckets, PermEntityTypeEnum.BUCKET, true)
+                                if (res === false) {
+                                    for (const buck of clonedAppBuckets) {
+                                        await deleteBucket(EnvTypeEnum.DEVELOPMENT, buck, "ALL");
+                                    }
+                                    await deleteAppInfo(EnvTypeEnum.DEVELOPMENT, clonedAppInfo, "ALL");
+                                    displayQuickMessage(UIMessageType.ERROR_MSG, "Failed to create buckets for cloned app!");
+                                    return;
+                                }
+                            }
+
                             displayQuickMessage(UIMessageType.SUCCESS_MSG, "Cloning process completed!");
                             clearCurrentAppInfo();
                             navigate(`/${ActionSceneEnum.APPHOME}/${clonedAppInfo._id}/overview`)
                         }
                         else {
-                            //for good measures...
-                            deleteAppInfo(EnvTypeEnum.DEVELOPMENT, clonedAppInfo, "ALL");
+                            await deleteAppInfo(EnvTypeEnum.DEVELOPMENT, clonedAppInfo, "ALL");
                             displayQuickMessage(UIMessageType.ERROR_MSG, "App cloning failed!");
                         }
                     }
@@ -473,6 +493,17 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
                     let res = await exportBucket(selectedEnvironment, bucket._id.toString(), srcEnv as EnvTypeEnum, destEnv as EnvTypeEnum).finally(() => { cancelLoadingSpinnerCtx() })
                     if(res) {
                         displayQuickMessage(UIMessageType.SUCCESS_MSG, "Bucket exported successfully!");
+                        fetchAppDetails(selectedEnvironment, appInfo._id.toString(), false).then(appRes => {
+                            if(appRes && appRes._id) {
+                                setAppInfo(appRes);
+                                getBucketList(selectedEnvironment, appInfo._id.toString()).then(buckRes => {
+                                    if(buckRes) {
+                                        let sortedBucks = sort(buckRes).asc(a => a.name)
+                                        setBucketList(sortedBucks);
+                                    }
+                                })
+                            }
+                        })
                     }
                     else {
                         displayQuickMessage(UIMessageType.ERROR_MSG, "Failed to successfully export bucket!");
@@ -516,8 +547,8 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
                     setLoadingSpinnerCtx({enabled: true, text: "Now creating a clone/copy of bucket. Please wait..."} as LoadingSpinnerInfo)
                     let clonedBucket = await cloneBucket(selectedEnvironment, bucket._id.toString() as string, newName).finally(() => { cancelLoadingSpinnerCtx() })
                     if(clonedBucket) {
-                        let res = await setupPermissionsForNewElement(loggedInUser, clonedBucket, PermEntityTypeEnum.BUCKET, true)
-                        if (res[0] === true) {
+                        let res = await setupPermissionsForNewElement(loggedInUser, [clonedBucket], PermEntityTypeEnum.BUCKET, true)
+                        if (res === true) {
                             displayQuickMessage(UIMessageType.SUCCESS_MSG, "Cloning process completed!");
                             getBucketList(selectedEnvironment, appInfo._id.toString()).then(buckRes => {
                                 if(buckRes) {
@@ -527,7 +558,6 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
                             })
                         }
                         else {
-                            //for good measures...
                             deleteBucket(EnvTypeEnum.DEVELOPMENT, clonedBucket, "ALL");
                             displayQuickMessage(UIMessageType.ERROR_MSG, "Bucket cloning failed!");
                         }
@@ -548,46 +578,44 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
                         setLoadingSpinnerCtx({enabled: true, text: `Now deleting app presence from '${focusEnv}' environment(s). Please wait...`})
                         let remainingEnvList = await deleteAppInfo(selectedEnvironment, appInfo, focusEnv).finally(() => { cancelLoadingSpinnerCtx() })
                         
-                        if(!remainingEnvList || (remainingEnvList.length === 0)) {
+                        if(!remainingEnvList || (remainingEnvList.length === 0) || (remainingEnvList.includes(EnvTypeEnum.DEVELOPMENT) === false)) {
+                            
+                            //handle app level permission deletion
                             setLoadingSpinnerCtx({enabled: true, text: "Now deleting roles and permissions for AppInfo instance. Please wait..."} as LoadingSpinnerInfo)
                             let permActionResult : QuickStatus<any> = await deletePermissionElements(appInfo, PermEntityTypeEnum.APP)
                             if(permActionResult.isSuccessful === false) {
                                 displayQuickMessage(UIMessageType.ERROR_MSG, `${permActionResult.message}`);
                             }
-                            else {
-                                displayQuickMessage(UIMessageType.SUCCESS_MSG, `App permissions removal operations have completed.`);
-                                if(bucketList && bucketList.length > 0) {
-                                    try {
-                                        setLoadingSpinnerCtx({enabled: true, text: "Now deleting roles and permissions for AppInfo buckets. Please wait..."} as LoadingSpinnerInfo)
+                            
+                            //handle bucket level permission deletion
+                            if(bucketList && bucketList.length > 0) {
+                                try {
+                                    setLoadingSpinnerCtx({enabled: true, text: "Now deleting roles and permissions for AppInfo buckets. Please wait..."} as LoadingSpinnerInfo)
+                                
+                                    let promList = bucketList.map(buck => deletePermissionElements(buck, PermEntityTypeEnum.BUCKET) )
+                                    const results = await Promise.all(promList);
                                     
-                                        let promList = bucketList.map(buck => deletePermissionElements(buck, PermEntityTypeEnum.BUCKET) )
-                                        const results = await Promise.all(promList);
-                                        
-                                        let hasError = false;
+                                    let hasError = false;
 
-                                        results.forEach((buckPermActionResult: QuickStatus<any>) => {
-                                            if(buckPermActionResult.isSuccessful === false) {
-                                                console.error(`${buckPermActionResult.message}`);
-                                                hasError = true;
-                                            }
-                                        });
-
-                                        if (hasError) {
-                                            displayQuickMessage(UIMessageType.ERROR_MSG, `One or more errors occurred while deleting bucket permissions. Please review console log for details.`);
+                                    results.forEach((buckPermActionResult: QuickStatus<any>) => {
+                                        if(buckPermActionResult.isSuccessful === false) {
+                                            console.error(`${buckPermActionResult.message}`);
+                                            hasError = true;
                                         }
-                                        else {
-                                            displayQuickMessage(UIMessageType.SUCCESS_MSG, `Bucket permissions removal operations have completed.`);
-                                        }                                
-                                    }
-                                    catch(err: any) {
-                                        displayQuickMessage(UIMessageType.ERROR_MSG, `An error occurred while deleting bucket permissions. Permissions deleted due to AppInfo removal operation`);
-                                    }
-                                    finally {
-                                        cancelLoadingSpinnerCtx();
-                                    }
+                                    });
+
+                                    if (hasError) {
+                                        displayQuickMessage(UIMessageType.ERROR_MSG, `One or more errors occurred while deleting bucket permissions. Please review console log for details.`);
+                                    }                                
+                                }
+                                catch(err: any) {
+                                    displayQuickMessage(UIMessageType.ERROR_MSG, `An error occurred while deleting bucket permissions. Permissions deleted due to AppInfo removal operation`);
+                                }
+                                finally {
+                                    cancelLoadingSpinnerCtx();
                                 }
                             }
-
+                            
                             clearCurrentAppInfo();
                             navigate(`/list`); 
                         }
@@ -686,30 +714,20 @@ const AppInfoOverviewTab: React.FC<AppInfoOverviewTabProps> = ({  }) => {
                 if(addedBuckets && addedBuckets.length > 0) {
                     try {
                         setLoadingSpinnerCtx({enabled: true, text: "Now adding roles and permissions for new bucket(s). Please wait..."} as LoadingSpinnerInfo)
-                    
-                        let promList = addedBuckets.map(buck => setupPermissionsForNewElement(loggedInUser, buck, PermEntityTypeEnum.BUCKET, false))
-                        const results = await Promise.all(promList);
-                        
-                        let hasError = false;
-                        let delList = new Set<Bucket>();
-
-                        results.forEach((resInst: [boolean, AppInfo|Bucket]) => {
-                            if(resInst[0] === false) {
-                                console.error(`Failed to set up permissions for new bucket ${resInst[1].name}.`);
-                                hasError = true;
-                                delList.add(resInst[1]);
-                            }
-                        });
-
-                        if (hasError) {
-                            displayQuickMessage(UIMessageType.ERROR_MSG, `One or more errors occurred while setting up bucket permissions. Please review console log for details.`);
-                            if(delList.size > 0) {
-                                Array.from(delList).forEach(buck => deleteBucket(EnvTypeEnum.DEVELOPMENT, buck, "ALL"));
-                            }
+                        let res = await setupPermissionsForNewElement(loggedInUser, addedBuckets, PermEntityTypeEnum.BUCKET, false)
+                        if (res === true) {
+                            displayQuickMessage(UIMessageType.SUCCESS_MSG, "Bucket setup process completed!");
+                            getBucketList(selectedEnvironment, appInfo._id.toString()).then(buckRes => {
+                                if(buckRes) {
+                                    let sortedBucks = sort(buckRes).asc(a => a.name)
+                                    setBucketList(sortedBucks);
+                                }
+                            })
                         }
                         else {
-                            displayQuickMessage(UIMessageType.SUCCESS_MSG, `Bucket(s) have been added. Bucket permission setup operations have completed.`);
-                        }                                
+                            addedBuckets.forEach(x => deleteBucket(EnvTypeEnum.DEVELOPMENT, x, "ALL"));
+                            displayQuickMessage(UIMessageType.ERROR_MSG, "Bucket setup process failed!");
+                        }                
                     }
                     catch(err: any) {
                         displayQuickMessage(UIMessageType.ERROR_MSG, `An error occurred while setting up bucket permissions. Permissions deleted due to AppInfo removal operation`);

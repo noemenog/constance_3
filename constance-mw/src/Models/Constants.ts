@@ -1,55 +1,9 @@
-export const GENERAL_NOTE_FILES_FOLDER_NAME = "GENERAL_NOTE_FILES";
-
-export const SPECIAL_BLUE_COLOR = "#1976d2";
-export const SPECIAL_RED_COLOR = "#e77e7e";  //"#df5454";
-export const SPECIAL_DARKMODE_TEXTFIELD_COLOR = "rgb(102, 153, 153, 0.2)";
-export const SPECIAL_DARK_GOLD_COLOR = "#AA6C39";
-export const SPECIAL_GOLD_COLOR = "#e6b800";
-export const SPECIAL_QUARTZ_COLOR = "#1F2836";
-export const SPECIAL_DEEPER_QUARTZ_COLOR = "#161c26";
-export const SPECIAL_EVEN_DEEPER_QUARTZ_COLOR = "#0f131a";  //"#11161e";
-export const SPECIAL_PUPRLE_COLOR = "#c280ff";
-
-export const ERROR_WIKI_PREFIX = "https://wiki.ith.intel.com/display/ATTDDTD/Constance/";
-
-
-export const BASIC_NAME_VALIDATION_REGEX: RegExp = /^[A-Za-z0-9][A-Za-z0-9_-]*[A-Za-z0-9]$/;
-export const BASIC_NAME_VALIDATION_REGEX_WITH_SPACE: RegExp = /^[A-Za-z0-9][A-Za-z0-9_-\s]*[A-Za-z0-9]$/;
-export const MIN_DESCRIPTION_LENGTH = 15;
-
-
-export const MLCR_AUTH_AGS_URL = 'https://mlcr-auth.app.intel.com'
-export const MLCR_AUTH_AGS_URL_V2 = 'https://mlcr-auth.app.intel.com/v2'
-export const AGS_APP_NAME = "Spider"
-export const AGS_APP_IAPM_NUMBER = "25193"
-export const AGS_APP_OWNER_WG = "Owner-constance"
-export const AGS_APP_APPROVER_GROUP_POSTFIX = "APPROVER"
-export const AGS_APP_ACCESS_ENTITLEMENT = "Constance_User"
-
-
-export enum UIMessageType {
-    ERROR_MSG="error", 
-    SUCCESS_MSG="success", 
-    INFO_MSG="info",
-    WARN_MSG="warning",
-}
-
 
 export enum ErrorSeverityValue { 
     ERROR = "ERROR", 
     WARNING = "WARNING", 
     FATAL = "FATAL" 
 }
-
-
-export enum ActionSceneEnum {
-    ROOT = "root",
-    APPINFO = "project",
-    CONFIGURATIONS = "stackup",
-    COMPARE = "layergroups",
-    LOGS = "logs",
-    FAQS = "faq",
-} 
 
 
 export enum ConfigContentTypeEnum {
@@ -61,12 +15,12 @@ export enum ConfigContentTypeEnum {
     XML = "XML",
     YAML = "YAML",
     POWERSHELL = "POWERSHELL",
-    BASH_SHELL = "BASH_SHELL",
-    HTML = "HTML", 
-    CSS = "CSS", 
     DOCKERFILE = "DOCKERFILE",
-    VBSCRIPT = "VBSCRIPT",
+    HTML = "HTML", 
     SQL = "SQL"
+    // CSS = "CSS", 
+    // BASH_SHELL = "BASH_SHELL",
+    // VBSCRIPT = "VBSCRIPT",
 }
 
 
@@ -84,10 +38,6 @@ export enum NamingContentTypeEnum {
     ARBITRARY_DEFAULT = "ARBITRARY_DEFAULT",
 }
 
-
-export enum AppInfoPropertyCategoryEnum {
-    PERMISSION_ROLES = "PERMISSION_ROLES",
-}
 
 
 export enum DatabaseConnectionTypeEnum {
@@ -124,11 +74,6 @@ export class AppConfigConstants {
 export const BUCKETLIST = "BUCKETLIST";
 export const ENVIRONMENTLIST = "ENVIRONMENTLIST";
 
-export const CHANGE_INDICATOR = "CHANGE_INDICATOR";
 
-// export const MONGO_ID_CHECK_REGEX_PATTERN : RegExp = /^[0-9a-fA-F]{24}$/;
-
-
-
-export const CONFIGITEM__Init_Display_Message = "init_display_message";
-export const CONFIGITEM__Disabled_Apps = "disabled_apps";
+//contextProperties items
+export const CLONE_SOURCE_ID = "CLONE_SOURCE_ID";

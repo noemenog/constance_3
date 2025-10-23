@@ -116,8 +116,6 @@ function App() {
     }, []);
 
 
-
-
     
     return (
         <ColorModeContext.Provider value={colorMode}>
@@ -184,3 +182,220 @@ export default App;
 
 
 
+
+
+
+
+
+
+//========================================================================================================
+//======================================================================================================== 
+// Test endpoint: GET http://localhost:7000/api/v3/test/monaco-validator
+// async function executeTest(){
+//     try {
+//         console.log('🧪 Starting Monaco Validator API Test...');
+        
+//         const validator = new HeadlessMonacoValidator();
+//         await validator.initialize();
+        
+//         // Test cases with good and bad code for multiple languages
+//         const testCases = {
+//             // PYTHON TESTS
+//             'python-good.py': {
+//                 code: `def calculate_fibonacci(n):
+//     """Calculate fibonacci number recursively."""
+//     if n <= 1:
+//         return n
+//     return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)
+
+// # Test the function
+// result = calculate_fibonacci(10)
+// print(f"Fibonacci(10) = {result}")`,
+//                 language: 'python'
+//             },
+            
+//             'python-bad.py': {
+//                 code: `def broken_function(
+//     # Missing closing parenthesis and colon
+//     if x = 5:  # Should be == not =
+//         return x * 2
+//     else
+//         return x + 1  # Missing colon after else
+        
+// # Invalid indentation
+// print("This is wrong indentation")`,
+//                 language: 'python'
+//             },
+            
+//             // JAVASCRIPT TESTS
+//             'javascript-good.js': {
+//                 code: `class Calculator {
+//     constructor() {
+//         this.history = [];
+//     }
+    
+//     add(a, b) {
+//         const result = a + b;
+//         this.history.push(\`\${a} + \${b} = \${result}\`);
+//         return result;
+//     }
+// }
+
+// const calc = new Calculator();
+// console.log(calc.add(5, 3));`,
+//                 language: 'javascript'
+//             },
+            
+//             'javascript-bad.js': {
+//                 code: `class BrokenCalculator {
+//     constructor( {
+//         this.history = [];  // Missing closing parenthesis
+//     }
+    
+//     add(a, b) {
+//         const result = a +;  // Missing operand
+//         return result
+//     }  // Missing semicolon
+// }`,
+//                 language: 'javascript'
+//             },
+            
+//             // JSON TESTS
+//             'json-good.json': {
+//                 code: `{
+//     "name": "Test Config",
+//     "version": "1.0.0",
+//     "settings": {
+//         "enabled": true,
+//         "maxRetries": 3,
+//         "timeout": 5000
+//     }
+// }`,
+//                 language: 'json'
+//             },
+            
+//             'json-bad.json': {
+//                 code: `{
+//     "name": "Test Config",
+//     "version": "1.0.0",
+//     "settings": {
+//         "enabled": true,
+//         "maxRetries": 3,
+//         "timeout": 5000,  // Comments not allowed in JSON
+//     }  // Trailing comma not allowed
+// }`,
+//                 language: 'json'
+//             },
+            
+//             // SQL TESTS
+//             'sql-good.sql': {
+//                 code: `CREATE TABLE users (
+//     id SERIAL PRIMARY KEY,
+//     username VARCHAR(50) UNIQUE NOT NULL,
+//     email VARCHAR(100) UNIQUE NOT NULL,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+// );
+
+// INSERT INTO users (username, email) 
+// VALUES ('johndoe', 'john@example.com');
+
+// SELECT * FROM users WHERE created_at > '2024-01-01';`,
+//                 language: 'sql'
+//             },
+            
+//             'sql-bad.sql': {
+//                 code: `CREATE TABLE users (
+//     id SERIAL PRIMARY KEY,
+//     username VARCHAR(50) UNIQUE NOT NULL,
+//     email VARCHAR(100) UNIQUE NOT NULL,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Trailing comma
+// );
+
+// -- Missing VALUES keyword
+// INSERT INTO users (username, email) 
+//     ('johndoe', 'john@example.com');`,
+//                 language: 'sql'
+//             }
+//         };
+        
+//         console.log('🔍 Running validation tests...');
+        
+//         // Convert test cases to Map format
+//         const testCaseMap = new Map();
+//         Object.entries(testCases).forEach(([filename, data]) => {
+//             testCaseMap.set(filename, data);
+//         });
+        
+//         // Run validation
+//         const results = await validator.validate(testCaseMap);
+        
+//         // Process results
+//         let passCount = 0;
+//         let failCount = 0;
+//         const testResults = [];
+        
+//         for (const [filename, result] of results.entries()) {
+//             const isGoodCode = filename.includes('-good.');
+//             const isBadCode = filename.includes('-bad.');
+//             const language = filename.split('.').pop();
+            
+//             let testPassed = false;
+//             let status = '';
+            
+//             if (isGoodCode && result.isValid) {
+//                 status = 'PASS - Good code correctly validated';
+//                 testPassed = true;
+//                 passCount++;
+//             } else if (isBadCode && !result.isValid) {
+//                 status = 'PASS - Bad code correctly detected';
+//                 testPassed = true;
+//                 passCount++;
+//             } else if (isGoodCode && !result.isValid) {
+//                 status = 'FAIL - Good code incorrectly flagged as invalid';
+//                 failCount++;
+//             } else if (isBadCode && result.isValid) {
+//                 status = 'FAIL - Bad code incorrectly validated as good';
+//                 failCount++;
+//             }
+            
+//             testResults.push({
+//                 filename,
+//                 language: language?.toUpperCase(),
+//                 isValid: result.isValid,
+//                 errorCount: result.errors.length,
+//                 warningCount: result.warnings.length,
+//                 status,
+//                 passed: testPassed,
+//                 errors: result.errors.slice(0, 3).map((error: any) => ({
+//                     line: error.line,
+//                     message: error.message
+//                 }))
+//             });
+//         }
+        
+//         // Clean up
+//         validator.dispose();
+        
+//         const summary = {
+//             totalTests: passCount + failCount,
+//             passed: passCount,
+//             failed: failCount,
+//             successRate: ((passCount / (passCount + failCount)) * 100).toFixed(1) + '%'
+//         };
+        
+//         console.log(`✅ Monaco Validator Test completed: ${summary.successRate} success rate`);
+        
+//         console.log({
+//             payload: {
+//                 summary,
+//                 testResults,
+//                 message: passCount === (passCount + failCount) 
+//                     ? "🎉 ALL TESTS PASSED! Monaco validator is working perfectly!" 
+//                     : "⚠️ Some tests failed. Monaco validator may need refinement."
+//             }
+//         });
+        
+//     } catch (e: any) {
+//         console.error('❌ Monaco validator test failed:', e);
+//     }
+// }

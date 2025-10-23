@@ -151,7 +151,7 @@ bucketRouter.post("/:env/buckets/export-bucket", async (req: Request, res: Respo
         let srcBuckRepo = new ServiceModelRepository<Bucket>(DBCollectionTypeEnum.BUCKET_COLLECTION, src)
         let bucket = await srcBuckRepo.GetWithId(bucketId);
         if(bucket && bucket._id) {
-            await exportBucket(src, bucket, dest, user);
+            await exportBucket(src, bucket, dest, null, user);
         }
 
         res.status(200).send({ payload: true } as ResponseData);

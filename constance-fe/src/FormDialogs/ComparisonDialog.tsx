@@ -12,7 +12,7 @@ import { editor } from 'monaco-editor';
 import { BasicKVP, ConfigItem } from "../DataModels/ServiceModels";
 import { SPECIAL_QUARTZ_COLOR, SPECIAL_RED_COLOR } from "../DataModels/Constants";
 import { SpButton } from "../CommonComponents/SimplePieces";
-import EditorComp from "../CommonComponents/EditorComp";
+import EditorComp, { EditorCompRef } from "../CommonComponents/EditorComp";
 
 
 
@@ -39,8 +39,8 @@ const ComparisonDialog: React.FC<ComparisonDialogProps> = ({ title, subtitle, wa
     const [modContent, setModContent] = React.useState('');
 
     const containerRef = useRef<any>();
-    const currentConfEditorRef = useRef<null|editor.IStandaloneCodeEditor>(null);
-    const otherEnvConfEditorRef = useRef<null|editor.IStandaloneCodeEditor>(null);
+    const currentConfEditorRef = useRef<EditorCompRef>(null);
+    const otherEnvConfEditorRef = useRef<EditorCompRef>(null);
 
 
     let confListStr = JSON.stringify(contextualInfo?.value ?? []);
@@ -142,7 +142,8 @@ const ComparisonDialog: React.FC<ComparisonDialogProps> = ({ title, subtitle, wa
                                             disableMiniMap={disableMiniMap} 
                                             editorContentLanguage={editorContentLanguage} 
                                             editorContent={confListStr}
-                                            ref={currentConfEditorRef.current}
+                                            ref={currentConfEditorRef}
+                                            onEditorContentChanged={(event, value) => {} }
                                         />
                                     </Box>
                                 </Box>  
@@ -163,7 +164,8 @@ const ComparisonDialog: React.FC<ComparisonDialogProps> = ({ title, subtitle, wa
                                             disableMiniMap={disableMiniMap} 
                                             editorContentLanguage={editorContentLanguage} 
                                             editorContent={confListStr}
-                                            ref={otherEnvConfEditorRef.current}
+                                            ref={otherEnvConfEditorRef}
+                                            onEditorContentChanged={(event, value) => {} }
                                         />
                                     </Box>
                                 </Box>         

@@ -406,3 +406,61 @@ Handle:
     Permissions
     App clone
     Bucket clone
+
+
+
+
+
+
+=====================================================================================
+
+All Valid Monaco Editor Language Values
+Based on Monaco Editor v0.52.2, here are all valid language identifiers:
+
+Core Languages (Rich Language Features)
+These languages have full IntelliSense, error checking, and advanced features:
+
+typescript
+javascript
+css
+html
+json
+Basic Languages (Syntax Highlighting + Basic Features)
+Over 65+ languages with syntax highlighting and basic language support:
+
+Programming Languages:
+abap, apex, bat, bicep, c, cpp, csharp, clojure, coffee, dart, 
+elixir, flow9, fsharp, go, java, julia, kotlin, lua, m3, 
+objective-c, pascal, perl, php, python, qsharp, r, ruby, 
+rust, scala, scheme, solidity, swift, typescript, vb
+
+Web & Styling:
+css, html, less, scss, xml, markdown, mdx
+
+
+Data & Configuration:
+json, yaml, ini, dockerfile, hcl, protobuf, restructuredtext, 
+shell, tcl, typespec
+
+
+Query Languages:
+sql, mysql, pgsql, cypher, graphql, redis, redshift, sparql
+
+
+Template Languages:
+freemarker2, handlebars, liquid, pug, razor, twig
+
+
+Specialized/Domain-Specific:
+azcli, cameligo, csp, ecl, lexon, mips, msdax, pascaligo, 
+pla, postiats, powerquery, powershell, sb, sophia, st, 
+systemverilog, wgsl
+
+
+Language Categories for Easy Selection
+I've created a comprehensive reference file (MonacoLanguages.ts) that includes:
+
+Type-safe language constants
+Language categories (web, backend, mobile, etc.)
+Helper functions for validation and display names
+Popular languages subset for common use cases

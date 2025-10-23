@@ -12,7 +12,7 @@ import { getEnumValuesAsArray, getEnumValuesAsMap, validateConfigValueAndType, v
 import { ColorModeContext, tokens } from "../../theme";
 import { useTheme } from "@mui/material/styles";
 import { useLoaderData, useNavigate } from "react-router-dom";
-import EditorComp from "../../CommonComponents/EditorComp";
+import EditorComp, { EditorCompRef } from "../../CommonComponents/EditorComp";
 
 
 
@@ -48,7 +48,7 @@ const EditorViewComponent = forwardRef<EditorViewComponentRef, EditorCompProps>(
         
     const [configList, setConfigList] = useState<ConfigItem[]>(currentConfigs);
 
-    const editorRef = useRef<null|editor.IStandaloneCodeEditor>(null);
+    const editorRef = useRef<EditorCompRef>(null);
 
     const colorMode: string = darkMode ? "vs-dark" : "light";
 
@@ -62,14 +62,20 @@ const EditorViewComponent = forwardRef<EditorViewComponentRef, EditorCompProps>(
 
 
     useEffect(() => {
-        placePageTitle("Configs")
+        placePageTitle("EditorDetailView")
     }, []);
 
+
+    
+    useEffect(() => {
+        setConfigList(currentConfigs)
+    }, [currentConfigs]);
+    
 
 
     async function onValidateAndSaveConfigChanges() {
         if (editorRef?.current) {
-            let editorValue = (editorRef?.current as editor.IStandaloneCodeEditor).getValue();
+            let editorValue = editorRef.current.getValue();
             if(editorValue && editorValue.length > 0) {
                 let confDataArr: ConfigItem[] = new Array<ConfigItem>();
                 if (editorValue && editorValue.length > 0) {
@@ -202,7 +208,15 @@ const EditorViewComponent = forwardRef<EditorViewComponentRef, EditorCompProps>(
 
     return (
         <Box>
-            <EditorComp darkMode={darkMode} disableMiniMap={disableMiniMap} editorContentLanguage={editorContentLanguage} editorContent={JSON.stringify(configList ?? [])} />
+            <EditorComp 
+                ref={editorRef}
+                darkMode={darkMode} 
+                disableMiniMap={disableMiniMap} 
+                editorContentLanguage={editorContentLanguage} 
+                editorContent={JSON.stringify(configList ?? [])} 
+                initFontSize={14} 
+                onEditorContentChanged={onEditorContentChanged}
+            />
             
             {confirmationModalState && <ConfirmationDialog opened={confirmationModalState} close={confirmationModalActioner.close} {...confirmationDialogProps as ConfirmationDialogProps} /> }
             

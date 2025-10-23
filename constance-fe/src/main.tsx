@@ -26,7 +26,7 @@ import { ActionSceneEnum } from './DataModels/Constants';
 import AppInfoContainer from './Scenes/AppInfo/AppInfoContainer';
 import AppInfoList from './Scenes/AppInfo/AppInfoList';
 import LogView from './Scenes/Support/LogView';
-import { baseRouteLoader, appInfoListLoader, appInfoDetailsLoader as appInfoDetailsLoader, logsLoader, comparisonLoader, bucketConfigLoader } from './BizLogicUtilities/RouterLoaderFuncs';
+import { baseRouteLoader, appInfoListLoader, appInfoDetailsLoader as appInfoDetailsLoader, logsLoader, bucketConfigLoader } from './BizLogicUtilities/RouterLoaderFuncs';
 import BucketConfigContainer from './Scenes/BucketConfig/BucketConfigContainer';
 
 
@@ -90,6 +90,11 @@ const router = createBrowserRouter([
                 element: <BucketConfigContainer />,
                 loader: ({ request, params }: LoaderFunctionArgs) => bucketConfigLoader(request, params),
             },
+            // {
+            //     path: `${ActionSceneEnum.CONFIGURATIONS}/:appId/:env/:bucketId/:destEnv`,
+            //     element: <BucketConfigContainer />,
+            //     loader: ({ request, params }: LoaderFunctionArgs) => comparisonLoader(request, params),
+            // },
             {
                 path: `${ActionSceneEnum.CONFIGURATIONS}/:appId/:env/:bucketId`,
                 element: <BucketConfigContainer />,
@@ -99,11 +104,6 @@ const router = createBrowserRouter([
                 path: `${ActionSceneEnum.CONFIGURATIONS}/:appId/:env`,
                 element: <BucketConfigContainer />,
                 loader: ({ request, params }: LoaderFunctionArgs) => bucketConfigLoader(request, params),
-            },
-            {
-                path: `${ActionSceneEnum.COMPARE}/:appId/:env/:bucketId/:destEnv`,
-                element: <BucketConfigContainer />,
-                loader: ({ request, params }: LoaderFunctionArgs) => comparisonLoader(request, params),
             },
             //OTHERS====================================================================================
             {

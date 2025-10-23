@@ -153,9 +153,9 @@ body,
 
   --people-picker-no-results-text-color: #efefef;
   
-  --people-picker-input-background: #266daec0;
+  --people-picker-input-background: #c0c0c0;
   --people-picker-input-border-color: #c6c6c6;
-  --people-picker-input-hover-background: #c0c0c0;
+  --people-picker-input-hover-background:#accbe8c0;
   --people-picker-input-hover-border-color: #1f2a40;
 
   --people-picker-input-focus-background: #c0c0c0;
@@ -189,7 +189,8 @@ fluent-text-field .root{
   border-radius: "44px" !important;
 }
 
-
+ /* #266daec0; */
+  /* #c0c0c0; */
 
 /* ======================================================================================================*/
 /* Mantine Tabs */

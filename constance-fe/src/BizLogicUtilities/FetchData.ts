@@ -64,20 +64,20 @@ export async function deleteAppInfo(env: EnvTypeEnum, appInfo: AppInfo, delEnv: 
 
 
 export async function manageAppInfoLock(env: EnvTypeEnum, appId: string, loggedInUser: LoggedInUser, isLockAction: boolean): Promise<AppInfo> {
-    let url: string = `${getEnvContext().mainAPIUrl}/${env}/manage-lock?appId=${appId}&user=${loggedInUser?.email || ''}&isLockAction=${isLockAction?.toString() ?? ''}`;
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/appinfo/manage-lock?appId=${appId}&user=${loggedInUser?.email || ''}&isLockAction=${isLockAction?.toString() ?? ''}`;
     let resp = await performBackendCall(url, "POST", null);
     return resp;
 }
 
 export async function exportAll(env: EnvTypeEnum, appId: string, source: EnvTypeEnum, dest: EnvTypeEnum): Promise<boolean> {
-    let url: string = `${getEnvContext().mainAPIUrl}/${env}/export-all?appId=${appId}&src=${source}&dest=${dest}`;
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/appinfo/export-all?appId=${appId}&src=${source}&dest=${dest}`;
     let resp = await performBackendCall(url, "POST", null);
     return resp;
 }
 
 
 export async function cloneAppInfo(env: EnvTypeEnum, appId: string, newName: string): Promise<AppInfo> {
-    let url: string = `${getEnvContext().mainAPIUrl}/${env}/clone?appId=${appId}&newName=${newName}`;
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/appinfo/clone?appId=${appId}&newName=${newName}`;
     let resp = await performBackendCall(url, "POST", null);
     return resp;
 }
@@ -136,7 +136,7 @@ export async function cloneBucket(env: EnvTypeEnum, bucketId: string, newName: s
 export async function getConfigList(env: EnvTypeEnum, appId: string, bucketId: string): Promise<ConfigItem[]> {
     //___PERM___ if (isUserApprovedForCoreAction(loggedInUser, appInfo, PermissionActionEnum.CLONE_APPINFO) === false) { return; }
     //if user does not have access to bucket (env + bucket access), return empty array
-    let url: string = `${getEnvContext().mainAPIUrl}/${env}/configs/get-list?appId=${appId}&bucketId=${bucketId}`;
+    let url: string = `${getEnvContext().mainAPIUrl}/${env}/configs/get?appId=${appId}&bucketId=${bucketId}`;
     let resp = await performBackendCall(url, "GET", null);
     return resp;
 }
@@ -219,6 +219,10 @@ export async function postChunkedFileList(url: string, fileList: FileWithPath[],
 
 
 
+
+
+
+
 //============================================================================================================
 //=========================================== AGS/GRAPH FUNCTIONS ============================================
 //============================================================================================================
@@ -240,18 +244,18 @@ export async function createApproverWG(awg: string, loggedInUser: LoggedInUser) 
     };
 
     let resp = await axios.request(config).catch((err) => { console.error(`Error encountered while creating approver workgroup [${awg}]`, err) })
-    if(resp) {
+    if(resp?.data?.payload?.fullName && resp?.data?.payload?.fullName.length > 0){
         console.log(`Approver Group '${awg}' was created successfully`)
+        return resp.data.payload
     }
     else {
         console.error(`Error encountered while creating approver workgroup`)
+        return null
     }
-
-    return resp;
 }
 
 
-export async function createEntitlements(entitlementNames: string[], awg: string, projName: string) : Promise<Map<string, string>>{
+export async function createEntitlements(entNameToElementNameMap: Map<string, string>, awg: string) : Promise<Map<string, string>>{
     let mapping = new Map<string, string>();
     let entArr: any[] = [];
 
@@ -263,9 +267,8 @@ export async function createEntitlements(entitlementNames: string[], awg: string
         "certificationInterval": "None"
     }
 
-    for(let i = 0; i < entitlementNames.length; i++){
-        let entName = entitlementNames[i]
-        let descStr = (`${AGS_APP_NAME} entitlement for managing permissions - ${projName || ''}`).trim()
+    for(let [entName, elementName] of entNameToElementNameMap) {
+        let descStr = (`${AGS_APP_NAME} entitlement for managing permissions - ${elementName || ''}`).trim()
         entArr.push( { name: entName, displayName: entName, desc: descStr })
     }
 
@@ -283,18 +286,17 @@ export async function createEntitlements(entitlementNames: string[], awg: string
         data: payload
     }
 
-    let resp = await axios.request(config).catch((err) => { console.error(`Error encountered while creating entitlement(s) [${entitlementNames.join(", ")}]`, err) })
-    if(resp && resp.data && resp.data.length > 0){
-        for(let i = 0; i < resp.data.length; i++) {
-            let item = resp.data[i]
+    let resp = await axios.request(config).catch((err) => { console.error(`Error encountered while creating entitlement(s) [${Array.from(entNameToElementNameMap.keys()).join(", ")}]`, err) })
+    if(resp && resp.data && resp.data.payload && resp.data.payload.length > 0){
+        for(let i = 0; i < resp.data.payload.length; i++) {
+            let item = resp.data.payload[i]
             let entId = item.fullName
             let entName = item.displayName
             mapping.set(entName, entId);
         }
-        // console.log(`Entitlement creation was successfull for project ${projName}.`)
     }
     else {
-        console.error(`Error encountered while creating entitlement(s) for project '${projName}`)
+        console.error(`Error encountered while creating entitlement(s) for element(s) '${Array.from(entNameToElementNameMap.values()).join(", ")}'`)
     }
 
     return mapping;
@@ -329,9 +331,9 @@ export async function getEntitlementInfoByName(entName: string, expandMemberDeta
 
 
 //-----------------------------------------------------
-export async function updateEntitlementWithUser(entName: string, entId: string, existingEntMemberWwidList: string[], usersWWIDs: string[], loggedInUser: LoggedInUser){
+export async function updateEntitlementWithUser(entName: string, entId: string, existingEntMemberWwidList: string[], usersWWIDs: string[], loggedInUser: LoggedInUser) : Promise<QuickStatus<string>> {
     let baseUrl = MLCR_AUTH_AGS_URL_V2 + "/ent/update?appName=" + AGS_APP_NAME
-    
+    let errMessages: string[] = []
     let addNewUsers: string[] = []
     let removeUsers: string[] = []
     let operations: any[] = []
@@ -370,7 +372,7 @@ export async function updateEntitlementWithUser(entName: string, entId: string, 
         operations.push(ent_remove_users_payload)
     }
 
-    operations.forEach( (entPayload:any) => {
+    for(let entPayload of operations) {
         let config: any = {
             method: 'post',
             maxBodyLength: Infinity,
@@ -379,29 +381,29 @@ export async function updateEntitlementWithUser(entName: string, entId: string, 
             data: entPayload
         }
 
-        axios.request(config).then(async resp => {
+        let resp = await axios.request(config);
             
-            if(resp.data.s.length > 0){
-                let count = 0;
-                resp.data.s.forEach((status:Boolean) => {
-                    count++
-                });
-                console.log(entPayload["operationType"]+"ing "+count+" members")
+        if(resp?.data?.payload?.s && resp.data.payload.s.length > 0){
+            if(resp?.data?.payload?.s.length !== entPayload.requestedForIds.length){
+                console.error(`Mismatch in processed members count for entitlement: ${entName}`);
+                errMessages.push(`Only ${resp?.data?.payload?.s.length} out of ${entPayload.requestedForIds.length} members were processed for entitlement: ${entName}`);
             }
+        }
 
-            if(resp.data.f.length > 0){
-                resp.data.f.forEach((status:string) => {
-                    console.error("There was a failure while updating the user, please read the msg carefully ", status)
-                });
-            }
-            else {
-                // console.log("Entitlement successfully updated!")
-            }
+        if(resp?.data?.payload?.f && resp.data.payload.f.length > 0){
+            resp.data.payload.f.forEach((status:string) => {
+                console.error(`Failure(s) occured while updating the user list for entitlement '${entName}', Response: `, resp?.data?.payload);
+                errMessages.push(`Failure(s) occured while updating the user list for entitlement '${entName}'.`);
+            });
+        }
+    }
 
-        }).catch((err:any)=>{
-            console.error(`Error while updating the following entitlement: [${entName}]. Error: ${err}`)
-        })
-    });   
+    if(errMessages.length > 0){
+        return { isSuccessful: false, message: errMessages.join(" ") } as QuickStatus<string>;
+    }
+    else {
+        return { isSuccessful: true, message: `` } as QuickStatus<string>;
+    } 
 }
 
 
@@ -416,7 +418,9 @@ export async function deleteEntitlements(entNames: string[]) : Promise<any>{
     await Promise.all(promises).then((promiseVals) => {
         if(promiseVals && promiseVals.length > 0) {
             for(let entitlementResp of promiseVals) {
-                entIds.push(entitlementResp.id)
+                if(entitlementResp && entitlementResp.id) {
+                    entIds.push(entitlementResp.id)
+                }
             }
         }
     })
@@ -456,18 +460,19 @@ export async function deleteAWG(awg: string) : Promise<any>{
         url: url,
     };
     await axios.request(config).then(response => {
-        console.log("Successfully deleted approval workgroup, status: ", response.status)
-        console.log("Response returned while deleting approver work-group ", response.data)
+        console.log("Successfully deleted approval workgroup, status: ", response?.status || '')
+        console.log("Response returned while deleting approver work-group ", response?.data || '')
         resp = response
 
-    }).catch((err) => {
+    })
+    .catch((err) => {
         resp = {
-            "msg" : err.response.data.msg.message,
-            "code" : err.response.data.msg.code,
-            "serviceCode" : err.response.data.msg.serviceCode
+            "msg" : err?.response?.data?.msg?.message || '',
+            "code" : err?.response?.data?.msg?.code || '',
+            "serviceCode" : err?.response?.data?.msg?.serviceCode || ''
         }
         //when there is no awg, serviceCode returns "WorkgroupNotFound"
-        console.error("Error while deleting AWG: ", resp.serviceCode)  
+        console.error("Error while deleting AWG: ", resp?.serviceCode || '')  
     })
     return resp
 }
@@ -554,3 +559,68 @@ export async function getPermissionAWGItemsForCurrentUser(loggedInUser: LoggedIn
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        //     if(resp.data.f.length > 0){
+        //         resp.data.f.forEach((status:string) => {
+        //             console.error("There was a failure while updating the user, please read the msg carefully ", status)
+        //         });
+        //     }
+        //     else {
+        //         // console.log("Entitlement successfully updated!")
+        //     }
+
+        // }).catch((err:any)=>{
+        //     console.error(`Error while updating the following entitlement: [${entName}]. Error: ${err}`)
+        // })
+
+
+
+
+    //     axios.request(config).then(async resp => {
+            
+    //         if(resp.data.payload.s.length > 0){
+    //             let count = 0;
+    //             resp.data.payload.s.forEach((status: boolean) => {
+    //                 count++
+    //             });
+    //             console.log(entPayload["operationType"]+"ing "+count+" members")
+    //         }
+
+    //         if(resp.data.f.length > 0){
+    //             resp.data.f.forEach((status:string) => {
+    //                 console.error("There was a failure while updating the user, please read the msg carefully ", status)
+    //             });
+    //         }
+    //         else {
+    //             // console.log("Entitlement successfully updated!")
+    //         }
+
+    //     }).catch((err:any)=>{
+    //         console.error(`Error while updating the following entitlement: [${entName}]. Error: ${err}`)
+    //     })
+    // });  

@@ -4,8 +4,8 @@ import { AppInfo, Bucket, ConfigItem } from "../Models/ServiceModels";
 import { ServiceModelRepository } from "../Repository/ServiceModelRepository";
 import { checkDuplicatesIgnoreCase, containsSpecialChars } from "./UtilFunctions";
 import { User } from "../Models/HelperModels";
-import { HeadlessMonacoValidator, ValidationEntry, ValidationResults } from "./HeadlessMonacoValidator";
 import { get } from "http";
+import { CodeMirrorValidator } from "./CodeMirrorValidator";
 
 
 
@@ -119,7 +119,7 @@ async function validateConfigListForAddOrUpdate(env: string, inputConfigs: Confi
     }
     
     // Ensure that ConfigValue is actually the specified ConfigType.
-    validateConfigContent(inputConfigs);
+    await validateConfigContent(inputConfigs);
 }
 
 
@@ -214,88 +214,9 @@ export async function performConfigDelete(env: EnvTypeEnum, configs: ConfigItem[
 
 
 
-// Validate all code snippets
-async function validateConfigContent(configs: ConfigItem[]) {
-    if(configs && configs.length > 0) { 
-        let codeMap = new Map<string, ValidationEntry>();
-
-        for(let k = 0; k < configs.length; k++) {
-            if (configs[k].contentType === ConfigContentTypeEnum.BOOLEAN) {
-                if (configs[k].value.toString().toLowerCase() === "true" || configs[k].value.toString().toLowerCase() === "false") {
-                    return true;
-                } 
-                else {
-                    return false;
-                }
-            } 
-            else if (configs[k].contentType === ConfigContentTypeEnum.NUMBER) {
-                let res = /^-?\d+$/.test(configs[k].value.toString());
-                return res
-            } 
-            else if (configs[k].contentType === ConfigContentTypeEnum.STRING) {
-                if ((typeof configs[k].value === "string") && (configs[k].value.length > 0)){
-                    return true;
-                } 
-                else {
-                    return false;
-                }
-            } 
-            else {
-                let vEntry = { code: configs[k].value ?? '', language: getLanguageForContentType(configs[k].contentType) } as ValidationEntry;
-                codeMap.set(configs[k]._id?.toString() as string, vEntry);
-            }
-        }
-        
-        if(codeMap.size > 0) {
-            const validator = new HeadlessMonacoValidator();
-            await validator.initialize();
-            const results = await validator.validateCodeMap(codeMap);
-
-            if(results) {
-                for (const [key, result] of results.entries()) {
-
-                    console.log(key, result)
-                }
-            }
-            validator.dispose();
-        }
-
-        
-        
-        // // Process results
-        // for (const [key, result] of results.entries()) {
-        //     console.log(`\n=== ${key} ===`);
-        //     console.log(`Valid: ${result.isValid}`);
-            
-        //     if (result.errors.length > 0) {
-        //         console.log('Errors:');
-        //         result.errors.forEach(error => {
-        //             console.log(`  Line ${error.line}:${error.column} - ${error.message}`);
-        //         });
-        //     }
-            
-        //     if (result.warnings.length > 0) {
-        //         console.log('Warnings:');
-        //         result.warnings.forEach(warning => {
-        //             console.log(`  Line ${warning.line}:${warning.column} - ${warning.message}`);
-        //         });
-        //     }
-        // }
-
-
-        // Clean up
-        
-    }
-}
-
-
-
-
 
 function getLanguageForContentType(contentType: ConfigContentTypeEnum): string {
     switch (contentType) {
-        case ConfigContentTypeEnum.BASH_SHELL:
-            return "shell";
         case ConfigContentTypeEnum.JSON:
             return "json";
         case ConfigContentTypeEnum.POWERSHELL:
@@ -307,13 +228,9 @@ function getLanguageForContentType(contentType: ConfigContentTypeEnum): string {
         case ConfigContentTypeEnum.YAML:
             return "yaml";
         case ConfigContentTypeEnum.HTML:
-            return "html";
-        case ConfigContentTypeEnum.CSS:
-            return "css";
+            return "xml";
         case ConfigContentTypeEnum.DOCKERFILE:
             return "dockerfile";
-        case ConfigContentTypeEnum.VBSCRIPT:
-            return "vbscript";
         case ConfigContentTypeEnum.SQL:
             return "sql";
         default:
@@ -324,93 +241,35 @@ function getLanguageForContentType(contentType: ConfigContentTypeEnum): string {
 
 
 
-
-
-
-
-
-
-
-
-
-        // let valueTypeValResult = validateConfigValueAndType(confItem.value, confItem.contentType)
-        // if(valueTypeValResult === false){
-        //     throw new Error(`The value for ConfigItem '${confItem.name}' is not actually of the type ${confItem.contentType}'`);
-        // }
-
-
-
-
-
-
-
-
-
-
-            // const collection = getConfigCollection(req.params.env);
-            // let incomingConfIdArr: (string | mongo.ObjectId )[] = [];
-            // let incomingConfigNameArr: string[] = [];
-            
-            // for (const item in configs) {
-            //     const cid = configs[item]?._id ?? ""
-            //     const cName = configs[item]?.name ?? ""
-                
-            //     if(cid && cid.toString().length > 0) {
-            //         incomingConfIdArr.push(new mongo.ObjectId(cid));
-            //     }
-            //     else if (cName && cName.toString().length > 0) {
-            //         incomingConfigNameArr.push(cName);
-            //     }
-            //     else {
-            //         throw new Error("Cannot update config item(s). All input configs items must have valid IDs")
-            //     }
-            // }
-            
-            // let expression = { $or: [ {_id: { $in: incomingConfIdArr } as any }, {configName: { $in: incomingConfigNameArr } as any } ]};
-            // const foundConfs = (await collection.find(expression).toArray()) as ConfigItem[];
-
-            // let foundIdStrs = foundConfs?.map((a, i) => a._id?.toString()) ?? [];
-            // let foundNames = foundConfs?.map((a, i) => a.name?.toString()) ?? [];
-            
-            // let nonExistent = [];
-
-            // if(foundConfs && foundConfs.length > 0) {
-                
-            //     let incomingConfIdStrArr : string[] = incomingConfIdArr.map((a, i) => a.toString())
-            //     for(let x = 0; x < incomingConfIdStrArr.length; x++) {
-            //         if(foundIdStrs.includes(incomingConfIdStrArr[x]) == false) {
-            //             nonExistent.push(foundConfs[x])  
-            //         }
-            //     }
-                
-            //     for(let y = 0; y < incomingConfigNameArr.length; y++) {
-            //         if(foundNames.includes(incomingConfigNameArr[y]) == false) {
-            //             nonExistent.push(foundConfs[y])  
-            //         }
-            //     }
-
-            //     if (configs.length !== foundConfs.length) {
-            //         throw new Error("Cannot perform update. Input config(s) were not found in the system")
-            //     }
-            //     else if (nonExistent.length > 0) {
-            //         throw new Error("Cannot perform update. Input config(s) were not found in the system")
-            //     }
-            //     else {
-            //         for(let x = 0; x < configs.length; x++) {
-            //             if(!configs[x]._id){
-            //                 let foundFltr = foundConfs.filter(a => a.name === configs[x].name)
-            //                 if(foundFltr && foundFltr.length > 0){
-            //                     configs[x]._id = foundFltr[0]._id;
-            //                 }
-            //             }
-            //         }
-
-            //         let updatedConfigs = await performConfigUpdate(req.params.env, configs, false);
-            //         res.status(200).send({ payload: updatedConfigs } as ResponseData);
-            //     }
-            // }
-            // else {
-            //     throw new Error("Cannot update config item(s). All input configs items must already exist")
-            // }
-
-
+// Validate all code snippets
+async function validateConfigContent(configs: ConfigItem[]) {
+    if(configs && configs.length > 0) { 
+        for(let k = 0; k < configs.length; k++) {
+            if (configs[k].contentType === ConfigContentTypeEnum.BOOLEAN) {
+                if (configs[k].value.toString().toLowerCase() !== "true" && configs[k].value.toString().toLowerCase() !== "false") {
+                    throw new Error(`The value for config item '${configs[k].name}' is not actually of the type BOOLEAN'`);
+                }
+            } 
+            else if (configs[k].contentType === ConfigContentTypeEnum.NUMBER) {
+                let res = /^-?\d+$/.test(configs[k].value.toString());
+                if(res === false) {
+                    throw new Error(`The value for config item '${configs[k].name}' is not actually of the type NUMBER'`);
+                }
+            } 
+            else if (configs[k].contentType === ConfigContentTypeEnum.STRING) {
+                if ((typeof configs[k].value !== "string") || (configs[k].value.length === 0)){
+                    throw new Error(`The value for config item '${configs[k].name}' is not actually of the type STRING'`);
+                }
+            } 
+            else {
+                let language = getLanguageForContentType(configs[k].contentType);
+                let cmv = new CodeMirrorValidator();
+                let vResult = await cmv.validateSingle(configs[k].value ?? '', language);
+                if(vResult.isValid === false) {
+                    let errMsg = vResult.errors.map(a => `Line ${a.line}, Col ${a.column} : ${a.message}`).join(" | ");
+                    throw new Error(`The value for config item '${configs[k].name}' is not valid ${configs[k].contentType} content. Issues: ${errMsg}`);
+                }
+            }
+        }
+    }
+}

@@ -7,13 +7,13 @@ import { BasicProperty, Bucket, LoadingSpinnerInfo, LoggedInUser, QuickStatus } 
 import { useTheme } from "@mui/material/styles";
 import { useLoaderData, useLocation, useNavigate } from "react-router-dom";
 import { tokens } from "../../theme";
-import { DoneOutlined } from "@mui/icons-material";
+import { DoneOutlined, X } from "@mui/icons-material";
 import { useCStore } from "../../DataModels/ZuStore";
 import { CDomainData, User } from "../../DataModels/ServiceModels";
 import { AppInfo } from "../../DataModels/ServiceModels";
 import { SpButton } from "../../CommonComponents/SimplePieces";
 import { getEnviList, getRoleForEnv, rfdcCopy } from "../../BizLogicUtilities/UtilFunctions";
-import { getPreloadPermissions, updateOwnerElementPermissions } from "../../BizLogicUtilities/Permissions";
+import { getPreloadPermissions, isUserInApproverWGForOwnerElement, updateOwnerElementPermissions } from "../../BizLogicUtilities/Permissions";
 
 
 
@@ -35,7 +35,7 @@ const AppInfoPermissionsTab: React.FC<AppInfoPermissionsTabProps> = ({  }) => {
     const setLoadingSpinnerCtx = useCStore((state) => state.setLoadingSpinnerCtx);
     const cancelLoadingSpinnerCtx = useCStore((state) => state.cancelLoadingSpinnerCtx);
     const displayQuickMessage = useCStore((state) => state.displayQuickMessage);
-    const loggedInUser = useCStore((state) => state.loggedInUser);
+    const loggedInUser = useCStore((state) => state.loggedInUser) as LoggedInUser;
 
     const [appInfo, setAppInfo] = useState<AppInfo>(appObj);
     const [bucketList, setBucketList] = useState<Bucket[]>(buckets);
@@ -74,18 +74,49 @@ const AppInfoPermissionsTab: React.FC<AppInfoPermissionsTabProps> = ({  }) => {
         if(selectedPeople && selectedPeople.length > 0) {
             let newMap = rfdcCopy<Map<string, Map<PermRolesEnum, User[]>>>(roleUsers) as Map<string, Map<PermRolesEnum, User[]>>;
             let userSet = new Array<User>()
-            for(let item of selectedPeople) {
-                let user: User = { id: item.id, idsid: '', email: item.userPrincipalName, wwid: item.jobTitle };
-                userSet.push(user)
-            } 
-            let iterMap = newMap.get(ownerElementId) ?? new Map<PermRolesEnum, User[]>();
-            for(let [role, userList] of iterMap) {
-                if(role === permRole) {
-                    newMap.get(ownerElementId)?.set(role, userSet);
-                    break;
+            let omittedPeople = new Array<string>();
+
+            let adminRoleUsers = newMap.get(ownerElementId)?.get(PermRolesEnum.APP_ADMIN) ?? []
+            let bucketAdminRoleUsers = newMap.get(ownerElementId)?.get(PermRolesEnum.BUCKET_ADMIN) ?? []
+
+            for(let person of selectedPeople) {
+                if(isUserInApproverWGForOwnerElement(loggedInUser, appInfo)) {
+                    omittedPeople.push(person.displayName ?? person.userPrincipalName);
+                    continue; //skip adding this user to non-admin role if they are already an admin
                 }
-            }   
-            setRoleUsers(newMap);
+
+                if(permRole !== PermRolesEnum.APP_ADMIN) {
+                    if(adminRoleUsers.some(x => person.id.toLowerCase().trim() === x.id.toLowerCase().trim())) {
+                        omittedPeople.push(person.displayName ?? person.userPrincipalName);
+                        continue; //skip adding this user to non-admin role if they are already an admin
+                    }
+                }
+
+                if(permRole === PermRolesEnum.BUCKET_ADMIN) {
+                    if(bucketAdminRoleUsers.some(x => person.id.toLowerCase().trim() === x.id.toLowerCase().trim())) {
+                        omittedPeople.push(person.displayName ?? person.userPrincipalName);
+                        continue; //skip adding this user to non-admin role if they are already an admin
+                    }
+                }
+
+                let personUser: User = { id: person.id, idsid: '', email: person.userPrincipalName, wwid: person.jobTitle };
+                userSet.push(personUser)
+            } 
+
+            if(userSet.length > 0) {
+                let iterMap = newMap.get(ownerElementId) ?? new Map<PermRolesEnum, User[]>();
+                for(let [role, userList] of iterMap) {
+                    if(role === permRole) {
+                        newMap.get(ownerElementId)?.set(role, userSet);
+                        break;
+                    }
+                }   
+                setRoleUsers(newMap);
+            }
+
+            if(omittedPeople && omittedPeople.length > 0) {
+                displayQuickMessage(UIMessageType.WARN_MSG, `The following users will ultimately not be added to the '${permRolesDisplayTextMap.get(permRole)}' role because they are already assigned to a higher-privilege role: ${omittedPeople.join(", ")}`);
+            }
         }
     }
     
@@ -93,7 +124,7 @@ const AppInfoPermissionsTab: React.FC<AppInfoPermissionsTabProps> = ({  }) => {
 
     async function performPermissionsUpdate(): Promise<void> {
         setLoadingSpinnerCtx({enabled: true, text: "Now updating app/bucket roles and permission assignments. Please wait..."} as LoadingSpinnerInfo)
-        let permActionResult : QuickStatus<any> = await updateOwnerElementPermissions(loggedInUser as LoggedInUser, appInfo, roleUsers).finally(() => { cancelLoadingSpinnerCtx() })
+        let permActionResult : QuickStatus<any> = await updateOwnerElementPermissions(loggedInUser, appInfo, roleUsers).finally(() => { cancelLoadingSpinnerCtx() })
         if(permActionResult.isSuccessful === false) {
             displayQuickMessage(UIMessageType.ERROR_MSG, `${permActionResult.message}`);
         }
@@ -176,6 +207,7 @@ const AppInfoPermissionsTab: React.FC<AppInfoPermissionsTabProps> = ({  }) => {
                                                 placeholder='members'
                                                 showMax={10}
                                                 disableImages={false}
+                                                // selectedPeople={["ndubuisi.emenogu@intel.com"]}
                                                 selectionChanged={(event : any) => onMemeberSelectionChanged(event?.target?.selectedPeople, appInfo._id?.toString() as string, getRoleForEnv(environment) as PermRolesEnum)}
                                                 defaultSelectedUserIds={getExistingMembers(getRoleForEnv(environment), appInfo._id?.toString() as string)}  //pre-populate with array of email addresses
                                             >

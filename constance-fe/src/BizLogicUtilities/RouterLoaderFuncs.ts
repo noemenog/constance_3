@@ -18,7 +18,6 @@ export async function handleTheBasics(appId: string|null, scene: ActionSceneEnum
         appInfoCollection: [],
         appInfo: null,
         bucketList: [],
-        configList: [],
         selectedConfig: null,
         currentEnv: null,
         destEnv: null,
@@ -46,10 +45,6 @@ export async function handleTheBasics(appId: string|null, scene: ActionSceneEnum
         }
 
         store.setCurrentAppBasicInfo(domainData.appInfo)
-
-        // let permissionRoles : BasicProperty[] = domainData.project?.associatedProperties?.find(a => (
-        //     a.category === ProjectPropertyCategoryEnum.PERMISSION_ROLES && a.name === ProjectPropertyCategoryEnum.PERMISSION_ROLES))?.value ?? [] 
-        // store.setPermissionRoles(permissionRoles)
     }
 
     if(forceRetrieveConfig === true) {        
@@ -124,7 +119,7 @@ export async function appInfoDetailsLoader(request: Request, params: Params) : P
 
 export async function bucketConfigLoader(request: Request, params: Params) : Promise<CDomainData|null> {
     const store = useCStore.getState(); 
-    let domainData = await handleTheBasics(params.appId as string, ActionSceneEnum.CONFIGURATIONS)
+    let domainData =await handleTheBasics(params.appId as string, ActionSceneEnum.CONFIGURATIONS)
     
     store.setLoadingSpinnerCtx({enabled: true, text: "Retrieving list of buckets for current app. Please wait..."} as LoadingSpinnerInfo)
     let buckets = (await getBucketList(store.selectedEnvironment, params.appId as string).finally(() => { store.cancelLoadingSpinnerCtx()  })) ?? []
@@ -141,15 +136,15 @@ export async function bucketConfigLoader(request: Request, params: Params) : Pro
 }
 
 
-export async function comparisonLoader(request: Request, params: Params) : Promise<CDomainData|null> {
-    const store = useCStore.getState(); 
-    let domainData = await handleTheBasics(params.projectId as string, ActionSceneEnum.COMPARE)
+// export async function comparisonLoader(request: Request, params: Params) : Promise<CDomainData|null> {
+//     const store = useCStore.getState(); 
+//     let domainData = await handleTheBasics(params.projectId as string, ActionSceneEnum.COMPARE)
     
-    let buckets = await getBucketList(store.selectedEnvironment, params.appId as string) ?? []
-    domainData.bucketList = buckets;
+//     let buckets = await getBucketList(store.selectedEnvironment, params.appId as string) ?? []
+//     domainData.bucketList = buckets;
 
-    return domainData
-}
+//     return domainData
+// }
 
 
 

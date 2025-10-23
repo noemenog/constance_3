@@ -4,19 +4,16 @@ import { ColorModeContext, tokens } from "../../theme";
 import { useTheme } from "@mui/material/styles";
 import { useLoaderData, useLocation, useNavigate, useParams } from "react-router-dom";
 import styled from "@emotion/styled";
-import { Accordion, Tabs, rem } from "@mantine/core";
-import { WorkspacesOutlined } from "@mui/icons-material";
 import { useDisclosure } from "@mantine/hooks";
 import { ActionSceneEnum, UIMessageType, SPECIAL_RED_COLOR, EnvTypeEnum, SPECIAL_DARK_GOLD_COLOR, SPECIAL_BLUE_COLOR, ConfigContentTypeEnum } from "../../DataModels/Constants";
 import ConfirmationDialog, { ConfirmationDialogActionType, ConfirmationDialogProps } from "../../FormDialogs/ConfirmationDialog";
 import { BasicKVP, BasicProperty, PropertyItem, LoadingSpinnerInfo, LoggedInUser, MenuInfo, CDomainData, ConfigItem } from "../../DataModels/ServiceModels";
 import { useCStore } from "../../DataModels/ZuStore";
 import { handleLockAction } from "../../BizLogicUtilities/Permissions";
-import MenuListComposition from "../../CommonComponents/MenuListComposition";
 import GeneralInfoDialog, { GeneralInfoDialogProps, GeneralInfoUIContext } from "../../FormDialogs/GeneralInfoDialog";
 import AsciiTextComp from "../../CommonComponents/AsciiText";
 import { AppInfo, Bucket } from "../../DataModels/ServiceModels";
-import { getEnumValuesAsArray, getEnviList, rfdcCopy } from "../../BizLogicUtilities/UtilFunctions";
+import { getEnviList, rfdcCopy } from "../../BizLogicUtilities/UtilFunctions";
 import EditorViewComponent, { EditorViewComponentRef } from "./EditorViewComponent";
 import { addConfigs, deleteConfigs, getBucketList, getConfigList, updateConfigs } from "../../BizLogicUtilities/FetchData";
 import TableViewComponent, {TableViewComponentRef} from "./TableViewComponent";
@@ -38,7 +35,6 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
     const domainData = useLoaderData() as CDomainData;
     const appObj = domainData.appInfo;
     const buckets = domainData.bucketList ?? [];
-    const confs = domainData.configList ?? [];
 
     const loggedInUser = useCStore((state) => state.loggedInUser) as LoggedInUser;
     const displayQuickMessage = useCStore((state) => state.displayQuickMessage);
@@ -56,7 +52,7 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
 
     const [appInfo, setAppInfo] = useState<AppInfo>(appObj as AppInfo);
     const [bucketList, setBucketList] = useState<Bucket[]>(buckets);
-    const [configList, setConfigList] = useState<ConfigItem[]>(confs);
+    const [configList, setConfigList] = useState<ConfigItem[]>([]);
 
     
     const [confirmationModalState, confirmationModalActioner] = useDisclosure(false);
@@ -83,9 +79,29 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
 
 
     useEffect(() => {
-        placePageTitle("configurations");
+        if(selectedBucket) {
+            if(jsonConfigViewEnabled) {
+                placePageTitle(`EditorDetailView`);
+            }
+            else {
+                placePageTitle(`ConfigTableView`);
+            }
+        }
+        else {
+            placePageTitle("Configurations");
+        }
     }, []);
 
+
+
+    useEffect(() => {
+        if(selectedEnvironment && selectedBucket && appInfo) {
+            getConfigList(selectedEnvironment, appInfo._id?.toString() as string, selectedBucket?._id?.toString() as string).then((currentConfigs) => {
+                setConfigList(currentConfigs)
+            });
+        }
+    }, [selectedEnvironment, selectedBucket]);
+    
 
     const envOptions : EnvTypeEnum[] = useMemo(() => {
         let appEnvList = getEnviList(appInfo)
@@ -119,16 +135,18 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
 
     function onEnvironmentSelectionChanged(env: string|null) {
         if (env && env.toString().length > 0) {
-            //Warning - It is expecgted that user will never select an environment where the app does not exist
+            //Warning - It is expected that user will never select an environment where the app does not exist
             setSelectedEnvironment(env as EnvTypeEnum);
             if(selectedBucket && selectedBucket._id) {
                 let bucketEnvList = getEnviList(selectedBucket)
                 if(bucketEnvList.envListRawFormatArray.includes(env)) {
                     navigate(`/${ActionSceneEnum.CONFIGURATIONS}/${appInfo._id.toString()}/${env}/${selectedBucket._id.toString()}`, {replace: true} ); 
+                    displayQuickMessage(UIMessageType.INFO_MSG, `Environment changed to '${env}'. Selected bucket: '${selectedBucket.name}' is available in the selected environment.`);
                 }
                 else {
                     setSelectedBucket(null);
                     navigate(`/${ActionSceneEnum.CONFIGURATIONS}/${appInfo._id.toString()}/${env}`, {replace: true} ); 
+                    displayQuickMessage(UIMessageType.INFO_MSG, `Environment changed to '${env}'. Please select a bucket to view configurations.`);
                 }
             }
         }
@@ -171,12 +189,13 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
                 if(selectedConfigs && selectedConfigs.length > 0) {
                     let newAdders = selectedConfigs.filter(x => x._id.toString().startsWith(NEW_CONF_ID_PREFIX));
                     let updItems = selectedConfigs.filter(x => (x._id.toString().startsWith(NEW_CONF_ID_PREFIX) === false));
-
+                    let doRefresh = false;
                     if(updItems && updItems.length > 0) {
                         setLoadingSpinnerCtx({enabled: true, text: "Now updating existing configs. Please wait..."} as LoadingSpinnerInfo)
                         let updatedConfigs = await updateConfigs(selectedEnvironment as EnvTypeEnum, selectedConfigs).finally(() => { cancelLoadingSpinnerCtx() });
                         if(updatedConfigs && updatedConfigs.length > 0) {
                             displayQuickMessage(UIMessageType.SUCCESS_MSG, `${updatedConfigs.length} configuration(s) were successfully updated.`);
+                            doRefresh = true;
                         }
                         else {
                             displayQuickMessage(UIMessageType.ERROR_MSG, "Configurations were not updated successfully.");
@@ -188,24 +207,27 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
                         let addedConfigs = await addConfigs(selectedEnvironment as EnvTypeEnum, newAdders).finally(() => { cancelLoadingSpinnerCtx() });
                         if(addedConfigs && addedConfigs.length > 0) {
                             displayQuickMessage(UIMessageType.SUCCESS_MSG, `${addedConfigs.length} configuration(s) were successfully added.`);
+                            doRefresh = true;
                         }
                         else {
                             displayQuickMessage(UIMessageType.ERROR_MSG, "Configurations were not added successfully.");
                         }
                     }
 
-                    setLoadingSpinnerCtx({enabled: true, text: "Now refreshing config list. Please wait..."} as LoadingSpinnerInfo)
-                    getConfigList(selectedEnvironment as EnvTypeEnum, appInfo._id?.toString() as string, selectedBucket?._id.toString() as string).then((confList) => {
-                        if(confList) {
-                            setConfigList(confList);
-                        }
-                        else {
-                            displayQuickMessage(UIMessageType.ERROR_MSG, "Failed to successfully refresh list of configurations.");
-                        }
-                    })
-                    .finally(() => {
-                        setLoadingSpinnerCtx({enabled: false, text: ``})
-                    })
+                    if(doRefresh === true) {
+                        setLoadingSpinnerCtx({enabled: true, text: "Now refreshing config list. Please wait..."} as LoadingSpinnerInfo)
+                        getConfigList(selectedEnvironment as EnvTypeEnum, appInfo._id?.toString() as string, selectedBucket?._id.toString() as string).then((confList) => {
+                            if(confList) {
+                                setConfigList(confList);
+                            }
+                            else {
+                                displayQuickMessage(UIMessageType.ERROR_MSG, "Failed to successfully refresh list of configurations.");
+                            }
+                        })
+                        .finally(() => {
+                            setLoadingSpinnerCtx({enabled: false, text: ``})
+                        })
+                    }
                 }
                 else {
                     displayQuickMessage(UIMessageType.ERROR_MSG, "No configurations were selected for the intended action.");
@@ -238,19 +260,6 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
                 let existingConfigs = rfdcCopy<ConfigItem[]>(configList) as ConfigItem[];
                 let newConfigList = [newConf, ...existingConfigs];
                 setConfigList(newConfigList);
-
-
-                // let mteDialogProps: MultiTextEntryDialogProps = {
-                //     onFormClosed: onMultiTextEntryDataAvailable,
-                //     title: "Add New Configs",
-                //     warningText: `Please specify name(s) for new configuration items (comma separated).`,
-                //     textArrayLabel: "New Config Names (comma separated)",
-                //     textArrayProhibitedValues: configList?.map(x => x.name) ?? [],
-                //     textArrayInputMinWidth: 100,
-                //     contextualInfo: { key: "ADD_CONFIGS", value: null }
-                // }
-                // setMultiTextEntryDialogProps(mteDialogProps)
-                // multiTextEntryModalActioner.open()
             }
         }
     }
@@ -739,6 +748,24 @@ const BucketConfigContainer: React.FC<BucketConfigContainerProps> = () => {
 export default BucketConfigContainer
 
 
+
+
+
+
+
+
+
+                // let mteDialogProps: MultiTextEntryDialogProps = {
+                //     onFormClosed: onMultiTextEntryDataAvailable,
+                //     title: "Add New Configs",
+                //     warningText: `Please specify name(s) for new configuration items (comma separated).`,
+                //     textArrayLabel: "New Config Names (comma separated)",
+                //     textArrayProhibitedValues: configList?.map(x => x.name) ?? [],
+                //     textArrayInputMinWidth: 100,
+                //     contextualInfo: { key: "ADD_CONFIGS", value: null }
+                // }
+                // setMultiTextEntryDialogProps(mteDialogProps)
+                // multiTextEntryModalActioner.open()
 
 
 
